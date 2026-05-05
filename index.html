@@ -3,144 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNS Manager - QR Generator & Scanner</title>
+    <title>CNS Technical Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Thư viện Quét QR -->
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <!-- Thư viện Tạo mã QR -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         .tab-content { display: none; }
-        .active { display: block; }
-        #qrcode img { margin: 0 auto; border: 10px solid white; shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);}
+        .tab-content.active { display: block; }
+        .active-btn { border-bottom: 3px solid white; opacity: 1 !important; }
+        #qrcode-img img { margin: 0 auto; border: 8px solid white; }
     </style>
 </head>
-<body class="bg-slate-100 font-sans">
+<body class="bg-gray-100 font-sans">
 
-    <header class="bg-blue-900 text-white p-4 shadow-md text-center">
-        <h1 class="font-bold uppercase tracking-tight">Hệ thống Kỹ thuật VHF/VCCS</h1>
-        <p class="text-[10px] opacity-70">CÔNG CỤ TẠO & QUẢN LÝ TÀI SẢN QR</p>
+    <!-- Header -->
+    <header class="bg-blue-900 text-white p-4 shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-lg font-bold uppercase">Kỹ thuật VHF/VCCS</h1>
+            <span class="text-[10px] bg-blue-700 px-2 py-1 rounded">2026 PRO v4.0</span>
+        </div>
     </header>
 
-    <nav class="flex bg-white shadow sticky top-0 z-50">
-        <button onclick="switchTab('scan')" id="btn-scan" class="flex-1 py-3 font-bold border-b-2 border-blue-600 text-blue-600">QUÉT MÃ</button>
-        <button onclick="switchTab('gen')" id="btn-gen" class="flex-1 py-3 font-bold border-b-2 border-transparent">TẠO NHÃN QR</button>
+    <!-- Navigation -->
+    <nav class="bg-blue-800 text-white flex justify-around sticky top-[60px] z-40 shadow-md">
+        <button onclick="switchTab('tab-log')" id="btn-log" class="py-3 px-2 text-xs font-bold opacity-60 active-btn">NHẬT KÝ</button>
+        <button onclick="switchTab('tab-sop')" id="btn-sop" class="py-3 px-2 text-xs font-bold opacity-60">SOP</button>
+        <button onclick="switchTab('tab-scan')" id="btn-scan" class="py-3 px-2 text-xs font-bold opacity-60">QUÉT QR</button>
+        <button onclick="switchTab('tab-gen')" id="btn-gen" class="py-3 px-2 text-xs font-bold opacity-60">TẠO QR</button>
     </nav>
 
-    <main class="p-4 max-w-2xl mx-auto">
-        
-        <!-- PHÂN HỆ 1: QUÉT MÃ QR (SCANNER) -->
-        <section id="scan" class="tab-content active space-y-4">
+    <main class="container mx-auto p-4 max-w-2xl">
+
+        <!-- 1. NHẬT KÝ TRỰC CA -->
+        <section id="tab-log" class="tab-content active space-y-4">
             <div class="bg-white p-4 rounded-xl shadow border">
-                <h2 class="font-bold text-slate-700 mb-4 flex items-center">🔍 Kiểm tra thiết bị</h2>
-                <div id="reader" class="rounded-lg overflow-hidden bg-slate-200"></div>
-                <div class="flex gap-2 mt-4">
-                    <button onclick="startScan()" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold shadow-lg active:scale-95 transition">BẬT CAMERA</button>
-                    <button onclick="stopScan()" class="px-6 bg-slate-500 text-white py-3 rounded-lg font-bold">TẮT</button>
+                <h2 class="font-bold text-blue-900 mb-4">📝 Ghi nhật ký vận hành</h2>
+                <div class="space-y-3">
+                    <input type="text" id="log-device" placeholder="Thiết bị..." class="w-full border p-3 rounded-lg">
+                    <textarea id="log-desc" placeholder="Nội dung xử lý..." class="w-full border p-3 rounded-lg h-24"></textarea>
+                    <button onclick="saveLog()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold uppercase">Lưu nhật ký</button>
                 </div>
-                <div id="scan-result" class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden">
-                    <p class="text-[10px] font-bold text-blue-500 uppercase">Thông tin thiết bị:</p>
-                    <p id="scan-text" class="text-lg font-mono font-bold text-slate-800 break-all"></p>
+                <div class="mt-6 border-t pt-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-gray-700">Lịch sử gần đây:</h3>
+                        <button onclick="clearLogs()" class="text-red-500 text-xs">Xóa hết</button>
+                    </div>
+                    <div id="log-display" class="space-y-3"></div>
                 </div>
             </div>
         </section>
 
-        <!-- PHÂN HỆ 2: TẠO MÃ QR (GENERATOR) -->
-        <section id="gen" class="tab-content space-y-4">
-            <div class="bg-white p-5 rounded-xl shadow border">
-                <h2 class="font-bold text-slate-700 mb-4">🏷️ Tạo nhãn thiết bị mới</h2>
-                
-                <div class="space-y-3">
-                    <div>
-                        <label class="text-xs font-bold text-slate-500">MÃ ĐỊNH DANH (SERIAL/ID)</label>
-                        <input type="text" id="qr-input" placeholder="Ví dụ: JOTRON-TX-01" 
-                            class="w-full border-2 border-slate-100 p-3 rounded-lg focus:border-blue-500 outline-none font-mono">
+        <!-- 2. TRA CỨU SOP -->
+        <section id="tab-sop" class="tab-content space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow border">
+                <h2 class="font-bold text-blue-900 mb-4">📖 Quy trình SOP chuẩn</h2>
+                <input type="text" onkeyup="filterSOP()" id="sop-search" placeholder="Nhập từ khóa tìm lỗi..." class="w-full border-2 border-blue-50 p-3 rounded-xl mb-4 focus:border-blue-400 outline-none">
+                <div id="sop-list" class="space-y-3">
+                    <div class="sop-item p-3 bg-amber-50 border-l-4 border-amber-400 rounded" data-key="mất nguồn jotron vhf">
+                        <p class="font-bold text-sm">Mất nguồn VHF Jotron</p>
+                        <p class="text-xs mt-1">Kiểm tra CB AC -> Bộ chuyển đổi DC -> Đo áp 24VDC đầu vào.</p>
                     </div>
-                    <button onclick="generateQR()" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-green-700 transition">TẠO MÃ QR</button>
-                </div>
-
-                <div id="qr-output-area" class="mt-8 text-center hidden">
-                    <div id="qrcode" class="inline-block p-2 bg-white shadow-sm border"></div>
-                    <p class="mt-3 text-sm font-bold text-slate-700" id="qr-label-text"></p>
-                    <button onclick="window.print()" class="mt-4 text-blue-600 text-xs underline">In nhãn này (Ctrl + P)</button>
+                    <div class="sop-item p-3 bg-blue-50 border-l-4 border-blue-400 rounded" data-key="vccs sitti nhiễu audio">
+                        <p class="font-bold text-sm">VCCS Sitti bị nhiễu</p>
+                        <p class="text-xs mt-1">Kiểm tra Gain M800IP -> Kiểm tra trung kế -> Thay card Audio.</p>
+                    </div>
                 </div>
             </div>
+        </section>
 
-            <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
-                <p class="text-xs text-amber-800">
-                    <strong>💡 Lưu ý:</strong> Bạn nên nhập mã ngắn gọn (ví dụ: SN của Card) để mã QR đơn giản, giúp camera quét nhanh hơn trong điều kiện thiếu sáng của phòng máy.
-                </p>
+        <!-- 3. QUÉT MÃ QR -->
+        <section id="tab-scan" class="tab-content space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow border text-center">
+                <h2 class="font-bold text-blue-900 mb-4 uppercase">Kiểm tra thiết bị (QR)</h2>
+                <div id="reader" class="bg-gray-100 rounded-lg overflow-hidden border-2 border-dashed border-gray-300"></div>
+                <div class="flex gap-2 mt-4">
+                    <button id="btn-start" onclick="startCamera()" class="flex-1 bg-green-600 text-white py-3 rounded-lg font-bold">Bật Camera</button>
+                    <button id="btn-stop" onclick="stopCamera()" class="flex-1 bg-gray-500 text-white py-3 rounded-lg font-bold hidden">Tắt Camera</button>
+                </div>
+                <div id="scan-res-box" class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg hidden">
+                    <p class="text-[10px] font-bold text-green-600 uppercase">Dữ liệu thiết bị:</p>
+                    <p id="scan-res-text" class="text-lg font-mono font-bold"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. TẠO MÃ QR -->
+        <section id="tab-gen" class="tab-content space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow border text-center">
+                <h2 class="font-bold text-blue-900 mb-4 uppercase">Tạo nhãn mã QR</h2>
+                <input type="text" id="gen-input" placeholder="Nhập Serial hoặc ID thiết bị..." class="w-full border p-3 rounded-lg mb-4 font-mono text-center">
+                <button onclick="createQR()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold uppercase">Tạo mã</button>
+                <div id="gen-result" class="mt-8 hidden">
+                    <div id="qrcode-img" class="mb-2 shadow-sm inline-block"></div>
+                    <p id="gen-text" class="font-bold text-gray-700"></p>
+                    <p class="text-[10px] text-gray-400 mt-1 uppercase italic">Dán nhãn này lên Card thiết bị</p>
+                </div>
             </div>
         </section>
 
     </main>
 
     <script>
-        // Chuyển Tab
-        function switchTab(id) {
+        // --- CHUYỂN TAB ---
+        function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('nav button').forEach(b => {
-                b.classList.remove('text-blue-600', 'border-blue-600');
-                b.classList.add('border-transparent');
-            });
-            
-            document.getElementById(id).classList.add('active');
-            document.getElementById('btn-' + id).classList.add('text-blue-600', 'border-blue-600');
-            if (id !== 'scan') stopScan();
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-btn'));
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById('btn-' + tabId.replace('tab-', '')).classList.add('active-btn');
+            if (tabId !== 'tab-scan') stopCamera();
         }
 
-        // --- LOGIC TẠO MÃ QR ---
-        function generateQR() {
-            const input = document.getElementById('qr-input').value;
-            if(!input) return alert("Vui lòng nhập mã thiết bị!");
+        // --- NHẬT KÝ (LOCALSTORAGE) ---
+        function saveLog() {
+            const dev = document.getElementById('log-device').value;
+            const desc = document.getElementById('log-desc').value;
+            if(!dev || !desc) return alert("Vui lòng nhập đủ thông tin!");
+            const logs = JSON.parse(localStorage.getItem('cns_logs_v4') || '[]');
+            logs.unshift({ dev, desc, time: new Date().toLocaleString('vi-VN') });
+            localStorage.setItem('cns_logs_v4', JSON.stringify(logs));
+            document.getElementById('log-device').value = "";
+            document.getElementById('log-desc').value = "";
+            renderLogs();
+        }
+        function renderLogs() {
+            const logs = JSON.parse(localStorage.getItem('cns_logs_v4') || '[]');
+            document.getElementById('log-display').innerHTML = logs.map(l => `
+                <div class="p-3 bg-gray-50 border rounded text-xs shadow-sm">
+                    <div class="flex justify-between font-bold text-blue-700 mb-1"><span>${l.time}</span></div>
+                    <div class="font-bold">${l.dev}</div>
+                    <div class="text-gray-600">${l.desc}</div>
+                </div>
+            `).join('');
+        }
+        function clearLogs() { if(confirm("Xóa toàn bộ?")) { localStorage.removeItem('cns_logs_v4'); renderLogs(); } }
 
-            const outputArea = document.getElementById('qr-output-area');
-            const qrcodeDiv = document.getElementById('qrcode');
-            
-            // Xóa mã cũ nếu có
-            qrcodeDiv.innerHTML = "";
-            outputArea.classList.remove('hidden');
-            
-            // Tạo mã mới
-            new QRCode(qrcodeDiv, {
-                text: input,
-                width: 180,
-                height: 180,
-                colorDark : "#0f172a",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H // Độ bền cao nhất để quét dễ
+        // --- SOP ---
+        function filterSOP() {
+            const val = document.getElementById('sop-search').value.toLowerCase();
+            document.querySelectorAll('.sop-item').forEach(item => {
+                item.style.display = item.getAttribute('data-key').includes(val) ? 'block' : 'none';
             });
-
-            document.getElementById('qr-label-text').innerText = input;
         }
 
-        // --- LOGIC QUÉT MÃ QR ---
-        let scanner = null;
-        async function startScan() {
-            document.getElementById('scan-result').classList.add('hidden');
-            if (!scanner) scanner = new Html5Qrcode("reader");
-
+        // --- QUÉT QR (SỬA LỖI CAMERA) ---
+        let html5Qr = null;
+        async function startCamera() {
+            document.getElementById('scan-res-box').classList.add('hidden');
+            document.getElementById('btn-start').classList.add('hidden');
+            document.getElementById('btn-stop').classList.remove('hidden');
+            
+            if (!html5Qr) html5Qr = new Html5Qrcode("reader");
+            
             try {
-                await scanner.start(
+                await html5Qr.start(
                     { facingMode: "environment" },
                     { fps: 10, qrbox: { width: 250, height: 250 } },
-                    (decodedText) => {
-                        document.getElementById('scan-text').innerText = decodedText;
-                        document.getElementById('scan-result').classList.remove('hidden');
-                        // Phát tiếng bíp nếu muốn
-                        stopScan();
+                    (text) => {
+                        document.getElementById('scan-res-text').innerText = text;
+                        document.getElementById('scan-res-box').classList.remove('hidden');
+                        stopCamera();
                     }
                 );
             } catch (err) {
-                alert("Không thể mở Camera. Đảm bảo bạn đang dùng HTTPS và đã cấp quyền.");
+                alert("Lỗi Camera: Đảm bảo bạn dùng HTTPS và đã cấp quyền truy cập.");
+                stopCamera();
+            }
+        }
+        function stopCamera() {
+            if (html5Qr) {
+                html5Qr.stop().then(() => {
+                    html5Qr.clear(); html5Qr = null;
+                    document.getElementById('btn-start').classList.remove('hidden');
+                    document.getElementById('btn-stop').classList.add('hidden');
+                }).catch(() => { html5Qr = null; });
             }
         }
 
-        function stopScan() {
-            if (scanner) {
-                scanner.stop().then(() => { scanner.clear(); scanner = null; });
-            }
+        // --- TẠO QR ---
+        function createQR() {
+            const input = document.getElementById('gen-input').value;
+            if(!input) return alert("Nhập mã thiết bị!");
+            const qrDiv = document.getElementById('qrcode-img');
+            qrDiv.innerHTML = "";
+            new QRCode(qrDiv, { text: input, width: 160, height: 160, correctLevel : QRCode.CorrectLevel.H });
+            document.getElementById('gen-text').innerText = input;
+            document.getElementById('gen-result').classList.remove('hidden');
         }
+
+        // Khởi động
+        window.onload = renderLogs;
     </script>
 </body>
 </html>
