@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNS SuperApp - VATM Southern</title>
+    <title>CNS Manager & Training System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -12,288 +12,309 @@
         @font-face { font-family: 'TNR'; src: local('Times New Roman'); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .nav-active { border-bottom: 4px solid white; color: white !important; opacity: 1 !important; }
+        .nav-active { background-color: #1e3a8a; border-bottom: 3px solid #facc15; }
         .label-item { font-family: 'TNR', serif; page-break-inside: avoid; }
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         @media print { .no-print { display: none !important; } .print-only { display: block !important; } }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="bg-slate-100 text-slate-900 font-sans h-screen flex flex-col">
 
-    <!-- Header -->
-    <header class="bg-[#1e3a8a] text-white p-4 shadow-md sticky top-0 z-50 no-print">
-        <div class="flex justify-between items-center max-w-6xl mx-auto">
-            <div>
-                <h1 class="text-xs font-bold uppercase tracking-tighter">Đội Thông Tin - Trung Tâm BĐKT</h1>
-                <p class="text-[9px] opacity-70">Hệ thống Quản lý Kỹ thuật VHF & VCCS Toàn diện</p>
+    <!-- ================= GIAO DIỆN ĐĂNG NHẬP ================= -->
+    <div id="login-view" class="flex-1 flex items-center justify-center bg-blue-900 no-print">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
+            <h1 class="text-2xl font-bold text-blue-900 mb-2">CNS SYSTEM</h1>
+            <p class="text-xs text-slate-500 mb-6 uppercase">Đăng nhập Hệ thống</p>
+            
+            <div class="text-left mb-4">
+                <label class="block text-xs font-bold text-slate-700 mb-1">Cấp quyền truy cập</label>
+                <select id="login-role" class="w-full border p-2 rounded text-sm bg-slate-50">
+                    <option value="Admin">Quản trị viên (Admin/KTV)</option>
+                    <option value="Giám khảo">Giám khảo (Huấn luyện)</option>
+                    <option value="Thí sinh">Thí sinh (Học việc)</option>
+                </select>
             </div>
-            <div class="text-right text-[10px] leading-tight">
-                <p class="font-bold">Trần Văn Trường</p>
-                <p id="live-clock"></p>
-            </div>
+            
+            <input type="text" placeholder="Mã nhân viên" class="w-full border p-2 rounded text-sm mb-3" value="VATM-01">
+            <input type="password" placeholder="Mật khẩu" class="w-full border p-2 rounded text-sm mb-6" value="123456">
+            
+            <button onclick="performLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded transition-colors">
+                ĐĂNG NHẬP
+            </button>
         </div>
-    </header>
+    </div>
 
-    <!-- Menu Điều hướng chính -->
-    <nav class="bg-[#2563eb] text-white flex overflow-x-auto no-print sticky top-[57px] z-40 shadow-sm border-t border-blue-400">
-        <button onclick="switchTab('tab-log')" id="btn-log" class="py-3 px-4 text-[10px] font-bold opacity-60 flex-shrink-0 nav-active">NHẬT KÝ</button>
-        <button onclick="switchTab('tab-inv')" id="btn-inv" class="py-3 px-4 text-[10px] font-bold opacity-60 flex-shrink-0">THIẾT BỊ/KHO</button>
-        <button onclick="switchTab('tab-calc')" id="btn-calc" class="py-3 px-4 text-[10px] font-bold opacity-60 flex-shrink-0 uppercase text-yellow-200">Tính toán</button>
-        <button onclick="switchTab('tab-print')" id="btn-print" class="py-3 px-4 text-[10px] font-bold opacity-60 flex-shrink-0">IN NHÃN</button>
-        <button onclick="switchTab('tab-qr')" id="btn-qr" class="py-3 px-4 text-[10px] font-bold opacity-60 flex-shrink-0">QUÉT/TẠO QR</button>
-        <button onclick="switchTab('tab-doc')" id="btn-doc" class="py-3 px-4 text-[10px] font-bold opacity-60 flex-shrink-0 uppercase">Tài liệu</button>
-    </nav>
-
-    <main class="p-4 max-w-6xl mx-auto mb-20">
-
-        <!-- MODULE 1: NHẬT KÝ & BÁO CÁO -->
-        <section id="tab-log" class="tab-content active space-y-4">
-            <div class="bg-white p-4 rounded-xl shadow-sm border">
-                <h2 class="text-blue-900 font-bold text-sm mb-3 uppercase">Ghi nhật ký trực ca</h2>
-                <div class="grid grid-cols-2 gap-2 mb-2">
-                    <input type="text" id="log-dev" placeholder="Thiết bị..." class="border p-2 rounded text-sm focus:ring-1 outline-none">
-                    <select id="log-type" class="border p-2 rounded text-sm bg-gray-50">
-                        <option>Sửa chữa</option>
-                        <option>Bảo trì định kỳ</option>
-                        <option>Kiểm tra thông số</option>
-                    </select>
-                </div>
-                <textarea id="log-txt" placeholder="Chi tiết xử lý..." class="w-full border p-2 rounded h-20 text-sm mb-2 outline-none"></textarea>
-                <button onclick="saveLog()" class="w-full bg-blue-700 text-white py-2 rounded font-bold text-xs uppercase tracking-widest">Lưu ca trực</button>
-                <div id="log-list" class="mt-4 space-y-2 max-h-[400px] overflow-y-auto"></div>
+    <!-- ================= GIAO DIỆN ỨNG DỤNG (Ẩn mặc định) ================= -->
+    <div id="app-view" class="hidden flex-1 flex flex-col">
+        <!-- Header -->
+        <header class="bg-[#1e3a8a] text-white p-3 shadow-md no-print flex justify-between items-center">
+            <div>
+                <h1 class="text-sm font-bold uppercase tracking-wider">Đội Thông Tin - TT BĐKT</h1>
             </div>
-        </section>
-
-        <!-- MODULE 2: THIẾT BỊ & KHO VẬT TƯ -->
-        <section id="tab-inv" class="tab-content space-y-4">
-            <div class="bg-white p-4 rounded-xl shadow-sm border">
-                <div class="flex justify-between mb-4">
-                    <h2 class="text-blue-900 font-bold text-sm uppercase">Kho Card dự phòng & Thiết bị</h2>
-                    <button class="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded font-bold">+ THÊM MỚI</button>
-                </div>
-                <div class="overflow-x-auto text-[11px]">
-                    <table class="w-full border-collapse">
-                        <thead><tr class="bg-slate-50"><th class="p-2 border">Tên thiết bị/Card</th><th class="p-2 border">Serial</th><th class="p-2 border">Kho/Vị trí</th><th class="p-2 border">Tình trạng</th></tr></thead>
-                        <tbody>
-                            <tr class="hover:bg-blue-50">
-                                <td class="p-2 border font-medium">Card E1 SITTI M800IP</td>
-                                <td class="p-2 border font-mono">SN-8829-SIT</td>
-                                <td class="p-2 border text-blue-600">Ngăn 01 - Kho A</td>
-                                <td class="p-2 border text-green-600 font-bold italic">Sẵn sàng</td>
-                            </tr>
-                            <tr class="hover:bg-blue-50">
-                                <td class="p-2 border font-medium">Radio Jotron 7100 TX</td>
-                                <td class="p-2 border font-mono">SN-JT-9912</td>
-                                <td class="p-2 border text-blue-600">Rack Dự phòng</td>
-                                <td class="p-2 border text-amber-600 font-bold italic">Đang sửa</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="text-right text-xs">
+                <span id="user-role-display" class="bg-yellow-500 text-blue-900 px-2 py-1 rounded font-bold mr-2">Role</span>
+                <span>KTV: Trần Văn Trường</span>
+                <button onclick="logout()" class="ml-3 text-red-300 hover:text-red-100 underline text-[10px]">Thoát</button>
             </div>
-        </section>
+        </header>
 
-        <!-- MODULE 3: CÔNG CỤ TÍNH TOÁN KỸ THUẬT -->
-        <section id="tab-calc" class="tab-content">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-white p-4 rounded-xl shadow-sm border">
-                    <h2 class="text-blue-900 font-bold text-sm mb-4 uppercase italic">⚡ Đổi đơn vị Công suất</h2>
-                    <div class="space-y-3">
-                        <div>
-                            <label class="text-[10px] font-bold">Nhập giá trị (dBm):</label>
-                            <input type="number" id="dbm-input" oninput="calcPower()" class="w-full border p-2 rounded text-sm font-mono" value="47">
+        <!-- Menu Navigation (Thay đổi theo Role) -->
+        <nav class="bg-[#2563eb] text-white flex overflow-x-auto no-print text-[11px] font-bold shadow-sm">
+            <button onclick="switchTab('tab-inv')" id="btn-inv" class="nav-btn p-3 uppercase opacity-90 nav-active hidden hover:bg-blue-800">Kho / In Nhãn</button>
+            <button onclick="switchTab('tab-log')" id="btn-log" class="nav-btn p-3 uppercase opacity-90 hidden hover:bg-blue-800">Nhật Ký</button>
+            <button onclick="switchTab('tab-tools')" id="btn-tools" class="nav-btn p-3 uppercase opacity-90 hidden hover:bg-blue-800">Tiện ích (QR/Tính)</button>
+            <button onclick="switchTab('tab-exam-manage')" id="btn-exam-manage" class="nav-btn p-3 uppercase opacity-90 hidden hover:bg-blue-800">Quản lý Thi</button>
+            <button onclick="switchTab('tab-exam-take')" id="btn-exam-take" class="nav-btn p-3 uppercase opacity-90 hidden hover:bg-blue-800">Làm Bài Thi</button>
+            <button onclick="switchTab('tab-docs')" id="btn-docs" class="nav-btn p-3 uppercase opacity-90 hidden hover:bg-blue-800">Tài liệu / SOP</button>
+        </nav>
+
+        <main class="p-4 max-w-5xl mx-auto w-full flex-1 overflow-y-auto pb-20">
+
+            <!-- TAB: KHO & IN NHÃN (Dành cho Admin - Strict Spreadsheet Data) -->
+            <section id="tab-inv" class="tab-content no-print">
+                <div class="bg-white p-4 rounded shadow border border-slate-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-blue-900 font-bold uppercase text-sm">Danh mục Thiết bị (Đồng bộ từ Excel)</h2>
+                        <span class="text-[10px] bg-red-100 text-red-700 px-2 py-1 rounded border border-red-200 font-bold">Read-only Database</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-left">
+                                    <th class="p-2 border">Mã TS (QR/Bar)</th>
+                                    <th class="p-2 border">Tên Thiết Bị / Card</th>
+                                    <th class="p-2 border">Serial Number</th>
+                                    <th class="p-2 border">Vị trí</th>
+                                    <th class="p-2 border text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-table">
+                                <!-- Dữ liệu được render bằng JS để tránh Hallucination -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-6 p-4 bg-slate-50 border rounded">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-bold text-sm text-slate-800">Khu vực In Nhãn (Print Zone)</h3>
+                            <button onclick="window.print()" class="bg-green-600 text-white px-4 py-1 rounded text-xs font-bold shadow">IN TẤT CẢ</button>
                         </div>
-                        <div class="grid grid-cols-2 gap-2 text-center">
-                            <div class="bg-blue-50 p-2 rounded">
-                                <p class="text-[9px] text-blue-500 uppercase">Watts</p>
-                                <p id="val-watt" class="font-bold text-lg">50.12</p>
-                            </div>
-                            <div class="bg-blue-50 p-2 rounded">
-                                <p class="text-[9px] text-blue-500 uppercase">V-Peak (50Ω)</p>
-                                <p id="val-vpp" class="font-bold text-lg">70.71</p>
-                            </div>
+                        <div id="print-zone" class="flex flex-wrap gap-4 mt-4 min-h-[100px] p-2 bg-white border-dashed border-2 border-slate-300">
+                            <!-- Nhãn in xuất hiện ở đây -->
+                        </div>
+                        <button onclick="document.getElementById('print-zone').innerHTML=''" class="mt-2 text-xs text-red-600 underline">Xóa danh sách in</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: NHẬT KÝ (Admin) -->
+            <section id="tab-log" class="tab-content no-print">
+                <div class="bg-white p-4 rounded shadow border">
+                    <h2 class="text-blue-900 font-bold uppercase text-sm mb-3">Nhật ký Ca Trực</h2>
+                    <input type="text" id="log-dev" placeholder="Thiết bị xử lý..." class="w-full border p-2 rounded text-sm mb-2 outline-none">
+                    <textarea id="log-txt" placeholder="Chi tiết sự cố/bảo trì..." class="w-full border p-2 rounded h-20 text-sm mb-2 outline-none"></textarea>
+                    <button onclick="saveLog()" class="w-full bg-blue-700 text-white py-2 rounded font-bold text-xs">LƯU NHẬT KÝ</button>
+                    <div id="log-list" class="mt-4 space-y-2"></div>
+                </div>
+            </section>
+
+            <!-- TAB: TIỆN ÍCH QUÉT QR & TÍNH TOÁN (Admin) -->
+            <section id="tab-tools" class="tab-content no-print">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Máy tính SWR -->
+                    <div class="bg-white p-4 rounded shadow border">
+                        <h2 class="text-blue-900 font-bold text-sm mb-4 uppercase">Tính toán SWR (Anten VHF)</h2>
+                        <input type="number" id="fwd-pwr" placeholder="Công suất tới (W)" class="w-full border p-2 rounded text-sm mb-2">
+                        <input type="number" id="ref-pwr" placeholder="Công suất phản xạ (W)" class="w-full border p-2 rounded text-sm mb-2">
+                        <button onclick="calcSWR()" class="w-full bg-slate-800 text-white py-2 rounded text-xs font-bold mb-2">TÍNH SWR</button>
+                        <div id="swr-res" class="p-2 bg-slate-100 text-center rounded font-mono font-bold text-lg">SWR: --</div>
+                    </div>
+                    <!-- Quét QR -->
+                    <div class="bg-white p-4 rounded shadow border text-center">
+                        <h2 class="text-blue-900 font-bold text-sm mb-2 uppercase">Quét mã thiết bị</h2>
+                        <div id="reader" class="bg-slate-100 rounded border h-40 flex items-center justify-center text-xs text-slate-400 overflow-hidden">Camera Zone</div>
+                        <button id="cam-btn" onclick="toggleScan()" class="w-full bg-green-600 text-white py-2 mt-2 rounded font-bold text-xs">BẬT/TẮT CAMERA</button>
+                        <div id="qr-res" class="mt-2 p-2 bg-blue-50 border rounded hidden font-mono text-xs font-bold text-blue-700 break-all"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: QUẢN LÝ THI (Giám khảo) -->
+            <section id="tab-exam-manage" class="tab-content no-print">
+                <div class="bg-white p-4 rounded shadow border border-yellow-300">
+                    <h2 class="text-blue-900 font-bold uppercase text-sm mb-4">Quản lý Ngân hàng Đề & Điểm số</h2>
+                    <p class="text-xs text-slate-600 mb-4">Hệ thống tạo đề tự động từ thư viện 100 câu hỏi nghiệp vụ CNS/ATM.</p>
+                    <div class="flex gap-2 mb-6">
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded text-xs font-bold flex-1">TẠO ĐỀ MỚI</button>
+                        <button class="bg-slate-800 text-white px-4 py-2 rounded text-xs font-bold flex-1">XEM KẾT QUẢ THÍ SINH</button>
+                    </div>
+                    <div class="p-3 bg-green-50 border border-green-200 rounded">
+                        <h3 class="font-bold text-xs text-green-800 mb-2">Thí sinh hoàn thành gần nhất:</h3>
+                        <p class="text-xs text-slate-700">1. Nguyễn Văn A - 85/100đ - Tình trạng: Đạt</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: LÀM BÀI THI (Thí sinh) -->
+            <section id="tab-exam-take" class="tab-content no-print">
+                <div class="bg-white p-6 rounded shadow border">
+                    <div class="flex justify-between items-center mb-6 border-b pb-2">
+                        <h2 class="text-blue-900 font-bold uppercase text-lg">Bài kiểm tra năng lực CNS</h2>
+                        <span class="text-red-600 font-bold font-mono">TG: 45:00</span>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-slate-50 border rounded">
+                            <p class="font-bold text-sm mb-3">Câu 1: Băng tần liên lạc VHF Hàng không (Thoại) nằm trong dải tần số nào?</p>
+                            <label class="block text-sm mb-2"><input type="radio" name="q1" class="mr-2"> 108.000 MHz - 117.975 MHz</label>
+                            <label class="block text-sm mb-2"><input type="radio" name="q1" class="mr-2"> 118.000 MHz - 136.975 MHz</label>
+                            <label class="block text-sm mb-2"><input type="radio" name="q1" class="mr-2"> 328.600 MHz - 335.400 MHz</label>
                         </div>
                     </div>
+                    <button class="mt-6 w-full bg-green-600 text-white py-3 rounded font-bold uppercase shadow">Nộp bài kiểm tra</button>
                 </div>
+            </section>
 
-                <div class="bg-white p-4 rounded-xl shadow-sm border">
-                    <h2 class="text-blue-900 font-bold text-sm mb-4 uppercase italic">📡 Kiểm tra Anten (SWR)</h2>
-                    <div class="space-y-2">
-                        <input type="number" id="fwd-pwr" placeholder="Pwr Tới (W)" oninput="calcSWR()" class="w-full border p-2 rounded text-sm">
-                        <input type="number" id="ref-pwr" placeholder="Pwr Phản xạ (W)" oninput="calcSWR()" class="w-full border p-2 rounded text-sm">
-                        <div id="swr-res" class="p-3 bg-slate-900 text-green-400 font-mono text-center rounded text-xl">SWR: 1.0</div>
-                    </div>
+            <!-- TAB: TÀI LIỆU (Tất cả Role) -->
+            <section id="tab-docs" class="tab-content no-print">
+                <div class="bg-white p-4 rounded shadow border">
+                    <h2 class="text-blue-900 font-bold uppercase text-sm mb-4">Tài liệu & SOP</h2>
+                    <ul class="space-y-2 text-sm">
+                        <li class="p-3 bg-red-50 border-l-4 border-red-500 rounded flex justify-between">
+                            <span>SOP: Tổng hỏng trạm Radar Quy Nhơn (Cập nhật: 12/2025)</span>
+                            <span class="text-blue-600 underline cursor-pointer text-xs">Xem chi tiết</span>
+                        </li>
+                        <li class="p-3 bg-blue-50 border-l-4 border-blue-500 rounded flex justify-between">
+                            <span>Manual: Sitti MULTIFONO M800IP VCCS</span>
+                            <span class="text-blue-600 underline cursor-pointer text-xs">Tải PDF</span>
+                        </li>
+                    </ul>
                 </div>
-            </div>
-        </section>
-
-        <!-- MODULE 4: IN NHÃN BARCODE -->
-        <section id="tab-print" class="tab-content no-print">
-            <div class="bg-white p-4 rounded-xl shadow-sm border mb-4">
-                <h2 class="text-blue-900 font-bold text-sm mb-4 uppercase">Tùy chỉnh nhãn tài sản</h2>
-                <div class="grid grid-cols-2 gap-2 mb-4">
-                    <input type="text" id="inTen" value="Card M800IP" class="border p-2 rounded text-xs">
-                    <input type="text" id="inMa" value="CNS-VCCS-01" class="border p-2 rounded text-xs font-mono">
-                    <input type="text" id="inSN" placeholder="Serial..." class="border p-2 rounded text-xs">
-                    <input type="text" id="inNoiDat" value="ACC HCM" class="border p-2 rounded text-xs">
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="addLabel()" class="flex-1 bg-blue-600 text-white py-2 rounded text-xs font-bold uppercase">Thêm nhãn</button>
-                    <button onclick="window.print()" class="flex-1 bg-green-600 text-white py-2 rounded text-xs font-bold uppercase">In ngay</button>
-                    <button onclick="document.getElementById('print-zone').innerHTML=''" class="bg-red-500 text-white px-3 rounded">Xóa</button>
-                </div>
-            </div>
-            <div id="print-zone" class="flex flex-wrap gap-4 justify-center"></div>
-        </section>
-
-        <!-- MODULE 5: QUÉT & TẠO QR -->
-        <section id="tab-qr" class="tab-content">
-            <div class="bg-white p-4 rounded-xl shadow-sm border text-center">
-                <h2 class="text-blue-900 font-bold text-sm mb-4 uppercase">Công cụ QR Code</h2>
-                <div id="reader" class="bg-gray-100 rounded-lg overflow-hidden border"></div>
-                <button id="cam-btn" onclick="toggleScan()" class="w-full bg-green-600 text-white py-3 mt-4 rounded-lg font-bold">BẬT CAMERA</button>
-                <div id="qr-res" class="mt-4 p-4 bg-blue-50 border rounded-lg hidden font-mono font-bold text-blue-700"></div>
-                <div class="mt-8 pt-8 border-t">
-                    <input type="text" id="qr-gen-in" placeholder="Nội dung cần tạo QR..." class="w-full border p-3 rounded mb-2 outline-none">
-                    <button onclick="generateQuickQR()" class="w-full bg-slate-800 text-white py-3 rounded-lg font-bold">TẠO QR NHANH</button>
-                    <div id="qr-out" class="mt-4 inline-block bg-white p-2 border"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- MODULE 6: THƯ VIỆN TÀI LIỆU (SOP) -->
-        <section id="tab-doc" class="tab-content">
-            <div class="bg-white p-4 rounded-xl shadow-sm border">
-                <h2 class="text-blue-900 font-bold text-sm mb-4 uppercase italic">📚 Quy trình & Tài liệu Manual</h2>
-                <div class="space-y-3">
-                    <div class="p-3 border-l-4 border-red-500 bg-red-50 flex justify-between items-center">
-                        <div><p class="text-sm font-bold">SOP: Tổng hỏng trạm Radar Quy Nhơn</p><p class="text-[10px]">Cập nhật: 12/2025</p></div>
-                        <button class="bg-red-600 text-white text-[10px] px-2 py-1 rounded">XEM</button>
-                    </div>
-                    <div class="p-3 border-l-4 border-blue-500 bg-blue-50 flex justify-between items-center">
-                        <div><p class="text-sm font-bold">Sitti M800IP - Configuration Guide</p><p class="text-[10px]">Tài liệu Nhà sản xuất</p></div>
-                        <button class="bg-blue-600 text-white text-[10px] px-2 py-1 rounded">PDF</button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Footer Stats -->
-    <footer class="fixed bottom-0 w-full bg-white border-t p-2 flex justify-around text-[9px] font-bold text-slate-500 no-print z-50">
-        <div class="text-blue-600 uppercase">● Database: Local Browser</div>
-        <div class="uppercase">● Status: Ho Chi Minh ACC / Southern VATM</div>
-    </footer>
+            </section>
+        </main>
+    </div>
 
     <script>
-        // --- LOGIC CHUYỂN TAB ---
-        function switchTab(id) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('nav button').forEach(b => b.classList.remove('nav-active'));
-            document.getElementById(id).classList.add('active');
-            document.getElementById('btn-' + id.replace('tab-', '')).classList.add('nav-active');
-            if(id !== 'tab-qr') stopScan();
-        }
+        // ================= DỮ LIỆU EXCEL MÔ PHỎNG (STRICT DATA) =================
+        // Dữ liệu nội bộ đóng vai trò là "File Spreadsheeet" không thể chỉnh sửa tự do bằng form input
+        const spreadsheetData = [
+            { id: "CNS-VCCS-01", name: "Card VDA Sitti M800IP", sn: "SN-8821", loc: "HCM ACC / Slot 1" },
+            { id: "CNS-VCCS-02", name: "Card E1 Sitti M800IP", sn: "SN-8835", loc: "HCM ACC / Slot 2" },
+            { id: "CNS-VHF-01", name: "Radio Jotron 7100 TX", sn: "SN-9912", loc: "Trạm VHF / Rack A" },
+            { id: "CNS-ROUT-01", name: "Nokia 7750 SR", sn: "NK-SR-112", loc: "Phòng Server 1" }
+        ];
 
-        // --- NHẬT KÝ ---
-        function saveLog() {
-            const dev = document.getElementById('log-dev').value;
-            const txt = document.getElementById('log-txt').value;
-            const type = document.getElementById('log-type').value;
-            if(!dev || !txt) return alert("Vui lòng điền đủ thông tin.");
-            const logs = JSON.parse(localStorage.getItem('cns_superlogs') || '[]');
-            logs.unshift({ dev, txt, type, time: new Date().toLocaleString('vi-VN') });
-            localStorage.setItem('cns_superlogs', JSON.stringify(logs));
-            document.getElementById('log-dev').value = ''; document.getElementById('log-txt').value = '';
-            renderLogs();
-        }
-        function renderLogs() {
-            const logs = JSON.parse(localStorage.getItem('cns_superlogs') || '[]');
-            document.getElementById('log-list').innerHTML = logs.map(l => `
-                <div class="p-3 bg-white border border-slate-100 rounded shadow-sm text-xs">
-                    <div class="flex justify-between font-bold text-blue-800 border-b pb-1 mb-1">
-                        <span>[${l.type}] ${l.dev}</span><span class="text-[10px] opacity-60">${l.time}</span>
-                    </div>
-                    <div class="text-slate-600">${l.txt}</div>
-                </div>`).join('');
-        }
+        // ================= HỆ THỐNG PHÂN QUYỀN =================
+        function performLogin() {
+            const role = document.getElementById('login-role').value;
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('app-view').classList.remove('hidden');
+            document.getElementById('user-role-display').innerText = role;
 
-        // --- TÍNH TOÁN KỸ THUẬT ---
-        function calcPower() {
-            const dbm = parseFloat(document.getElementById('dbm-input').value);
-            if(isNaN(dbm)) return;
-            const watt = Math.pow(10, (dbm - 30) / 10);
-            const vpp = Math.sqrt(watt * 50);
-            document.getElementById('val-watt').innerText = watt.toFixed(2);
-            document.getElementById('val-vpp').innerText = vpp.toFixed(2);
-        }
-        function calcSWR() {
-            const fwd = parseFloat(document.getElementById('fwd-pwr').value);
-            const ref = parseFloat(document.getElementById('ref-pwr').value);
-            if(fwd > 0 && ref >= 0) {
-                const rho = Math.sqrt(ref / fwd);
-                const swr = (1 + rho) / (1 - rho);
-                document.getElementById('swr-res').innerText = "SWR: " + swr.toFixed(2);
-                document.getElementById('swr-res').className = swr > 1.5 ? "p-3 bg-red-900 text-red-400 font-mono text-center rounded text-xl" : "p-3 bg-slate-900 text-green-400 font-mono text-center rounded text-xl";
+            // Ẩn tất cả Tab Navigation
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.add('hidden');
+                btn.classList.remove('nav-active');
+            });
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+            // Phân quyền hiển thị
+            if (role === 'Admin') {
+                ['btn-inv', 'btn-log', 'btn-tools', 'btn-docs'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+                loadInventoryData();
+                switchTab('tab-inv');
+            } else if (role === 'Giám khảo') {
+                ['btn-exam-manage', 'btn-docs'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+                switchTab('tab-exam-manage');
+            } else if (role === 'Thí sinh') {
+                ['btn-exam-take', 'btn-docs'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+                switchTab('tab-exam-take');
             }
         }
 
-        // --- IN NHÃN BARCODE ---
-        function addLabel() {
-            const ten = document.getElementById('inTen').value;
-            const ma = document.getElementById('inMa').value;
-            const sn = document.getElementById('inSN').value;
-            const noi = document.getElementById('inNoiDat').value;
-            const id = "bc-" + Date.now();
+        function logout() {
+            document.getElementById('app-view').classList.add('hidden');
+            document.getElementById('login-view').classList.remove('hidden');
+            stopScan();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            // Tìm nút tương ứng và add class active
+            const btnId = 'btn-' + tabId.replace('tab-', '');
+            if(document.getElementById(btnId)) document.getElementById(btnId).classList.add('nav-active');
+        }
+
+        // ================= CHỨC NĂNG IN NHÃN (TỪ DỮ LIỆU EXCEL) =================
+        function loadInventoryData() {
+            const tbody = document.getElementById('inventory-table');
+            tbody.innerHTML = '';
+            spreadsheetData.forEach((item, index) => {
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-blue-50 transition-colors">
+                        <td class="p-2 font-mono font-bold text-blue-700">${item.id}</td>
+                        <td class="p-2">${item.name}</td>
+                        <td class="p-2 font-mono">${item.sn}</td>
+                        <td class="p-2">${item.loc}</td>
+                        <td class="p-2 text-center">
+                            <button onclick="pushToPrintZone(${index})" class="bg-indigo-600 text-white px-2 py-1 rounded text-[10px] font-bold">Thêm vào trang in</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function pushToPrintZone(index) {
+            const data = spreadsheetData[index];
+            const uid = "bc-" + Date.now() + index;
             const html = `
-                <div class="label-item border border-black p-1 w-[60mm] h-[40mm] bg-white flex flex-col no-print">
-                    <table class="w-full text-[10px] border-collapse">
-                        <tr><td class="border border-black p-1">Tên</td><td class="border border-black p-1 font-bold">${ten}</td></tr>
-                        <tr><td class="border border-black p-1">Mã</td><td class="border border-black p-1 font-bold font-mono">${ma}</td></tr>
-                        <tr><td class="border border-black p-1">S/N</td><td class="border border-black p-1 font-bold font-mono">${sn}</td></tr>
+                <div class="label-item border border-black p-1 w-[60mm] h-[40mm] bg-white flex flex-col print-only relative">
+                    <button onclick="this.parentElement.remove()" class="no-print absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow hover:bg-red-700 cursor-pointer">×</button>
+                    <table class="w-full text-[9px] border-collapse">
+                        <tr><td class="border border-black p-1">Tên</td><td class="border border-black p-1 font-bold">${data.name}</td></tr>
+                        <tr><td class="border border-black p-1">Mã</td><td class="border border-black p-1 font-bold font-mono">${data.id}</td></tr>
+                        <tr><td class="border border-black p-1">S/N</td><td class="border border-black p-1 font-bold font-mono">${data.sn}</td></tr>
                     </table>
                     <div class="flex-grow flex items-center justify-center border border-black border-t-0 p-1">
-                        <svg id="${id}"></svg>
+                        <svg id="${uid}"></svg>
                     </div>
                 </div>`;
             document.getElementById('print-zone').insertAdjacentHTML('beforeend', html);
-            JsBarcode("#" + id, ma, { format: "CODE128", displayValue: false, height: 30, width: 1.5, margin: 0 });
+            JsBarcode("#" + uid, data.id, { format: "CODE128", displayValue: false, height: 35, width: 1.5, margin: 0 });
         }
 
-        // --- QUÉT QR ---
+        // ================= CÁC TIỆN ÍCH KHÁC =================
+        function calcSWR() {
+            const fwd = parseFloat(document.getElementById('fwd-pwr').value);
+            const ref = parseFloat(document.getElementById('ref-pwr').value);
+            const resDiv = document.getElementById('swr-res');
+            if(fwd > 0 && ref >= 0) {
+                const rho = Math.sqrt(ref / fwd);
+                const swr = (1 + rho) / (1 - rho);
+                resDiv.innerText = "SWR: " + swr.toFixed(2);
+                resDiv.style.color = swr > 1.5 ? "red" : "green";
+            }
+        }
+
+        // Quét QR
         let scanner = null;
         async function toggleScan() {
             if(scanner) return stopScan();
             scanner = new Html5Qrcode("reader");
             try {
-                await scanner.start({facingMode: "environment"}, {fps: 10, qrbox: 250}, (txt) => {
+                await scanner.start({facingMode: "environment"}, {fps: 10, qrbox: 200}, (txt) => {
                     document.getElementById('qr-res').innerText = "DATA: " + txt;
                     document.getElementById('qr-res').classList.remove('hidden');
                     stopScan();
                 });
-                document.getElementById('cam-btn').innerText = "DỪNG CAMERA";
-                document.getElementById('cam-btn').classList.replace('bg-green-600', 'bg-red-600');
             } catch(e) { alert("Lỗi camera!"); }
         }
         function stopScan() {
             if(scanner) {
                 scanner.stop().then(() => { scanner.clear(); scanner = null; });
-                document.getElementById('cam-btn').innerText = "BẬT CAMERA";
-                document.getElementById('cam-btn').classList.replace('bg-red-600', 'bg-green-600');
             }
         }
-        function generateQuickQR() {
-            const val = document.getElementById('qr-gen-in').value;
-            if(!val) return;
-            document.getElementById('qr-out').innerHTML = "";
-            new QRCode(document.getElementById('qr-out'), { text: val, width: 120, height: 120 });
-        }
-
-        // Init
-        setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('vi-VN'); }, 1000);
-        window.onload = () => { renderLogs(); calcPower(); };
     </script>
 </body>
 </html>
