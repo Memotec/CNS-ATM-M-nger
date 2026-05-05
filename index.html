@@ -15,176 +15,218 @@
         .nav-active { background-color: #1e3a8a; border-bottom: 3px solid #facc15; }
         .label-item { font-family: 'TNR', serif; page-break-inside: avoid; }
         @media print { .no-print { display: none !important; } .print-only { display: block !important; } }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 font-sans h-screen flex flex-col">
 
     <!-- ================= GIAO DIỆN ĐĂNG NHẬP ================= -->
-    <div id="login-view" class="flex-1 flex items-center justify-center bg-blue-900 no-print">
+    <div id="login-view" class="flex-1 flex items-center justify-center bg-[#1e3a8a] no-print">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
-            <h1 class="text-2xl font-bold text-blue-900 mb-2">CNS SYSTEM</h1>
-            <p class="text-xs text-slate-500 mb-6 uppercase">Đăng nhập Hệ thống</p>
+            <h1 class="text-2xl font-bold text-blue-900 mb-1 uppercase tracking-wider">Hệ thống CNS</h1>
+            <p class="text-[11px] text-slate-500 mb-6 font-bold">QUẢN TRỊ KỸ THUẬT & ĐÀO TẠO VATM</p>
             
             <div class="text-left mb-4">
-                <label class="block text-xs font-bold text-slate-700 mb-1">Cấp quyền truy cập</label>
-                <select id="login-role" class="w-full border p-2 rounded text-sm bg-slate-50">
+                <label class="block text-[11px] font-bold text-slate-700 mb-1 uppercase">Cấp quyền truy cập</label>
+                <select id="login-role" class="w-full border-2 border-slate-200 p-2 rounded text-sm bg-slate-50 font-bold text-blue-800 outline-none focus:border-blue-500">
                     <option value="Admin">Quản trị viên (Admin/KTV)</option>
                     <option value="Giám khảo">Giám khảo (Huấn luyện)</option>
-                    <option value="Thí sinh">Thí sinh (Học việc)</option>
+                    <option value="Thí sinh">Thí sinh (Thực tập sinh)</option>
                 </select>
             </div>
             
-            <input type="text" placeholder="Mã nhân viên" class="w-full border p-2 rounded text-sm mb-3" value="VATM-01">
-            <input type="password" placeholder="Mật khẩu" class="w-full border p-2 rounded text-sm mb-6" value="123456">
+            <input type="text" id="login-user" placeholder="Họ và Tên / Mã NV" class="w-full border-2 border-slate-200 p-2 rounded text-sm mb-3 outline-none focus:border-blue-500" value="Trần Văn Trường">
+            <input type="password" placeholder="Mật khẩu" class="w-full border-2 border-slate-200 p-2 rounded text-sm mb-6 outline-none focus:border-blue-500" value="123456">
             
-            <button onclick="performLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded transition-colors">
+            <button onclick="performLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded transition-colors uppercase tracking-widest text-sm shadow-md">
                 ĐĂNG NHẬP
             </button>
         </div>
     </div>
 
-    <!-- ================= GIAO DIỆN ỨNG DỤNG (Ẩn mặc định) ================= -->
-    <div id="app-view" class="hidden flex-1 flex flex-col">
+    <!-- ================= GIAO DIỆN ỨNG DỤNG ================= -->
+    <div id="app-view" class="hidden flex-1 flex flex-col h-full overflow-hidden">
         <!-- Header -->
-        <header class="bg-[#1e3a8a] text-white p-3 shadow-md no-print flex justify-between items-center">
+        <header class="bg-[#1e3a8a] text-white p-3 shadow-md no-print flex justify-between items-center z-50">
             <div>
                 <h1 class="text-sm font-bold uppercase tracking-wider">Đội Thông Tin - TT BĐKT</h1>
             </div>
-            <div class="text-right text-xs">
-                <span id="user-role-display" class="bg-yellow-500 text-blue-900 px-2 py-1 rounded font-bold mr-2">Role</span>
-                <span>KTV: Trần Văn Trường</span>
-                <button onclick="logout()" class="ml-3 text-red-300 hover:text-red-100 underline text-[10px]">Thoát</button>
+            <div class="text-right text-xs flex items-center">
+                <span id="user-role-display" class="bg-yellow-500 text-blue-900 px-2 py-1 rounded font-bold mr-2 text-[10px] uppercase">Role</span>
+                <span id="user-name-display" class="font-bold">KTV</span>
+                <button onclick="logout()" class="ml-4 text-red-300 hover:text-red-100 underline text-[10px] uppercase font-bold border-l border-blue-700 pl-4">Thoát</button>
             </div>
         </header>
 
-        <!-- Menu Navigation (Thay đổi theo Role) -->
-        <nav class="bg-[#2563eb] text-white flex overflow-x-auto no-print text-[11px] font-bold shadow-sm">
-            <button onclick="switchTab('tab-inv')" id="btn-inv" class="nav-btn p-3 uppercase opacity-90 nav-active hidden hover:bg-blue-800">Kho / In Nhãn</button>
-            <button onclick="switchTab('tab-log')" id="btn-log" class="nav-btn p-3 uppercase opacity-90 hidden hover:bg-blue-800">Nhật Ký</button>
-            <button onclick="switchTab('tab-tools')" id="btn-tools" class="nav-btn p-3 uppercase opacity-90 hidden hover:bg-blue-800">Tiện ích (QR/Tính)</button>
-            <button onclick="switchTab('tab-exam-manage')" id="btn-exam-manage" class="nav-btn p-3 uppercase opacity-90 hidden hover:bg-blue-800">Quản lý Thi</button>
-            <button onclick="switchTab('tab-exam-take')" id="btn-exam-take" class="nav-btn p-3 uppercase opacity-90 hidden hover:bg-blue-800">Làm Bài Thi</button>
-            <button onclick="switchTab('tab-docs')" id="btn-docs" class="nav-btn p-3 uppercase opacity-90 hidden hover:bg-blue-800">Tài liệu / SOP</button>
+        <!-- Menu Navigation -->
+        <nav class="bg-[#2563eb] text-white flex overflow-x-auto no-print text-[11px] font-bold shadow-sm z-40 flex-shrink-0">
+            <!-- Admin Tabs -->
+            <button onclick="switchTab('tab-inv')" id="btn-inv" class="nav-btn p-3 uppercase opacity-90 nav-active hidden hover:bg-blue-800 whitespace-nowrap">Kho / In Nhãn</button>
+            <button onclick="switchTab('tab-log')" id="btn-log" class="nav-btn p-3 uppercase opacity-90 hidden hover:bg-blue-800 whitespace-nowrap">Nhật Ký</button>
+            <button onclick="switchTab('tab-tools')" id="btn-tools" class="nav-btn p-3 uppercase opacity-90 hidden hover:bg-blue-800 whitespace-nowrap">Tiện ích Kỹ thuật</button>
+            
+            <!-- Judge Tabs -->
+            <button onclick="switchTab('tab-exam-manage')" id="btn-exam-manage" class="nav-btn p-3 uppercase opacity-90 hidden hover:bg-blue-800 whitespace-nowrap text-yellow-200">Quản lý Kết quả Thi</button>
+            
+            <!-- Candidate Tabs -->
+            <button onclick="switchTab('tab-exam-take')" id="btn-exam-take" class="nav-btn p-3 uppercase opacity-90 hidden hover:bg-blue-800 whitespace-nowrap text-yellow-200">Làm Bài Thi</button>
+            
+            <!-- Shared Tab -->
+            <button onclick="switchTab('tab-docs')" id="btn-docs" class="nav-btn p-3 uppercase opacity-90 hidden hover:bg-blue-800 whitespace-nowrap">Tài liệu / SOP</button>
         </nav>
 
-        <main class="p-4 max-w-5xl mx-auto w-full flex-1 overflow-y-auto pb-20">
+        <main class="p-4 w-full flex-1 overflow-y-auto bg-slate-50 relative">
 
-            <!-- TAB: KHO & IN NHÃN (Dành cho Admin - Strict Spreadsheet Data) -->
-            <section id="tab-inv" class="tab-content no-print">
-                <div class="bg-white p-4 rounded shadow border border-slate-200">
+            <!-- ================= ADMIN: KHO & IN NHÃN ================= -->
+            <section id="tab-inv" class="tab-content no-print max-w-5xl mx-auto">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-blue-900 font-bold uppercase text-sm">Danh mục Thiết bị (Đồng bộ từ Excel)</h2>
+                        <h2 class="text-blue-900 font-bold uppercase text-sm">Danh mục Thiết bị nội bộ</h2>
                         <span class="text-[10px] bg-red-100 text-red-700 px-2 py-1 rounded border border-red-200 font-bold">Read-only Database</span>
                     </div>
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto rounded border border-slate-100">
                         <table class="w-full text-xs border-collapse">
                             <thead>
                                 <tr class="bg-slate-100 text-left">
-                                    <th class="p-2 border">Mã TS (QR/Bar)</th>
-                                    <th class="p-2 border">Tên Thiết Bị / Card</th>
-                                    <th class="p-2 border">Serial Number</th>
-                                    <th class="p-2 border">Vị trí</th>
-                                    <th class="p-2 border text-center">Thao tác</th>
+                                    <th class="p-3 border-b font-bold text-slate-600">Mã TS</th>
+                                    <th class="p-3 border-b font-bold text-slate-600">Tên Thiết Bị / Card</th>
+                                    <th class="p-3 border-b font-bold text-slate-600">Serial Number</th>
+                                    <th class="p-3 border-b font-bold text-slate-600">Vị trí</th>
+                                    <th class="p-3 border-b font-bold text-center text-slate-600">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody id="inventory-table">
-                                <!-- Dữ liệu được render bằng JS để tránh Hallucination -->
+                                <!-- Rendered via JS -->
                             </tbody>
                         </table>
                     </div>
                     
-                    <div class="mt-6 p-4 bg-slate-50 border rounded">
+                    <div class="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
                         <div class="flex justify-between items-center mb-2">
-                            <h3 class="font-bold text-sm text-slate-800">Khu vực In Nhãn (Print Zone)</h3>
-                            <button onclick="window.print()" class="bg-green-600 text-white px-4 py-1 rounded text-xs font-bold shadow">IN TẤT CẢ</button>
+                            <h3 class="font-bold text-sm text-slate-800 uppercase">Khu vực In Nhãn Barcode</h3>
+                            <button onclick="window.print()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-xs font-bold shadow uppercase tracking-wider">IN TẤT CẢ</button>
                         </div>
-                        <div id="print-zone" class="flex flex-wrap gap-4 mt-4 min-h-[100px] p-2 bg-white border-dashed border-2 border-slate-300">
-                            <!-- Nhãn in xuất hiện ở đây -->
+                        <div id="print-zone" class="flex flex-wrap gap-4 mt-4 min-h-[120px] p-4 bg-white border-dashed border-2 border-slate-300 rounded">
+                            <!-- Labels injected here -->
                         </div>
-                        <button onclick="document.getElementById('print-zone').innerHTML=''" class="mt-2 text-xs text-red-600 underline">Xóa danh sách in</button>
+                        <button onclick="document.getElementById('print-zone').innerHTML=''" class="mt-3 text-[11px] text-red-600 underline font-bold uppercase">Xóa danh sách in</button>
                     </div>
                 </div>
             </section>
 
-            <!-- TAB: NHẬT KÝ (Admin) -->
-            <section id="tab-log" class="tab-content no-print">
-                <div class="bg-white p-4 rounded shadow border">
-                    <h2 class="text-blue-900 font-bold uppercase text-sm mb-3">Nhật ký Ca Trực</h2>
-                    <input type="text" id="log-dev" placeholder="Thiết bị xử lý..." class="w-full border p-2 rounded text-sm mb-2 outline-none">
-                    <textarea id="log-txt" placeholder="Chi tiết sự cố/bảo trì..." class="w-full border p-2 rounded h-20 text-sm mb-2 outline-none"></textarea>
-                    <button onclick="saveLog()" class="w-full bg-blue-700 text-white py-2 rounded font-bold text-xs">LƯU NHẬT KÝ</button>
-                    <div id="log-list" class="mt-4 space-y-2"></div>
+            <!-- ================= ADMIN: NHẬT KÝ ================= -->
+            <section id="tab-log" class="tab-content no-print max-w-3xl mx-auto">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-blue-900 font-bold uppercase text-sm mb-4">Ghi nhận sự cố / Bảo trì</h2>
+                    <input type="text" id="log-dev" placeholder="Tên thiết bị / Hệ thống xử lý..." class="w-full border-2 border-slate-100 p-3 rounded text-sm mb-3 outline-none focus:border-blue-400 font-bold">
+                    <textarea id="log-txt" placeholder="Mô tả chi tiết tình trạng..." class="w-full border-2 border-slate-100 p-3 rounded h-24 text-sm mb-3 outline-none focus:border-blue-400"></textarea>
+                    <button onclick="saveLog()" class="w-full bg-blue-700 hover:bg-blue-800 text-white py-3 rounded font-bold text-xs uppercase tracking-widest shadow">LƯU NHẬT KÝ CA TRỰC</button>
+                    <div id="log-list" class="mt-6 space-y-3"></div>
                 </div>
             </section>
 
-            <!-- TAB: TIỆN ÍCH QUÉT QR & TÍNH TOÁN (Admin) -->
-            <section id="tab-tools" class="tab-content no-print">
+            <!-- ================= ADMIN: TIỆN ÍCH KỸ THUẬT ================= -->
+            <section id="tab-tools" class="tab-content no-print max-w-5xl mx-auto">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Máy tính SWR -->
-                    <div class="bg-white p-4 rounded shadow border">
-                        <h2 class="text-blue-900 font-bold text-sm mb-4 uppercase">Tính toán SWR (Anten VHF)</h2>
-                        <input type="number" id="fwd-pwr" placeholder="Công suất tới (W)" class="w-full border p-2 rounded text-sm mb-2">
-                        <input type="number" id="ref-pwr" placeholder="Công suất phản xạ (W)" class="w-full border p-2 rounded text-sm mb-2">
-                        <button onclick="calcSWR()" class="w-full bg-slate-800 text-white py-2 rounded text-xs font-bold mb-2">TÍNH SWR</button>
-                        <div id="swr-res" class="p-2 bg-slate-100 text-center rounded font-mono font-bold text-lg">SWR: --</div>
+                    <!-- SWR Calculator -->
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                        <h2 class="text-blue-900 font-bold text-sm mb-4 uppercase flex items-center gap-2"><span>📡</span> Tính toán SWR Anten VHF</h2>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Công suất TỚI (Watts)</label>
+                        <input type="number" id="fwd-pwr" class="w-full border-2 border-slate-100 p-3 rounded text-sm mb-3 font-mono font-bold">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Công suất PHẢN XẠ (Watts)</label>
+                        <input type="number" id="ref-pwr" class="w-full border-2 border-slate-100 p-3 rounded text-sm mb-4 font-mono font-bold">
+                        <button onclick="calcSWR()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded text-xs font-bold uppercase mb-4 shadow">TÍNH TOÁN SWR</button>
+                        <div id="swr-res" class="p-4 bg-slate-50 border border-slate-200 text-center rounded-lg font-mono font-bold text-xl text-slate-400">SWR: --</div>
                     </div>
-                    <!-- Quét QR -->
-                    <div class="bg-white p-4 rounded shadow border text-center">
-                        <h2 class="text-blue-900 font-bold text-sm mb-2 uppercase">Quét mã thiết bị</h2>
-                        <div id="reader" class="bg-slate-100 rounded border h-40 flex items-center justify-center text-xs text-slate-400 overflow-hidden">Camera Zone</div>
-                        <button id="cam-btn" onclick="toggleScan()" class="w-full bg-green-600 text-white py-2 mt-2 rounded font-bold text-xs">BẬT/TẮT CAMERA</button>
-                        <div id="qr-res" class="mt-2 p-2 bg-blue-50 border rounded hidden font-mono text-xs font-bold text-blue-700 break-all"></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB: QUẢN LÝ THI (Giám khảo) -->
-            <section id="tab-exam-manage" class="tab-content no-print">
-                <div class="bg-white p-4 rounded shadow border border-yellow-300">
-                    <h2 class="text-blue-900 font-bold uppercase text-sm mb-4">Quản lý Ngân hàng Đề & Điểm số</h2>
-                    <p class="text-xs text-slate-600 mb-4">Hệ thống tạo đề tự động từ thư viện 100 câu hỏi nghiệp vụ CNS/ATM.</p>
-                    <div class="flex gap-2 mb-6">
-                        <button class="bg-blue-600 text-white px-4 py-2 rounded text-xs font-bold flex-1">TẠO ĐỀ MỚI</button>
-                        <button class="bg-slate-800 text-white px-4 py-2 rounded text-xs font-bold flex-1">XEM KẾT QUẢ THÍ SINH</button>
-                    </div>
-                    <div class="p-3 bg-green-50 border border-green-200 rounded">
-                        <h3 class="font-bold text-xs text-green-800 mb-2">Thí sinh hoàn thành gần nhất:</h3>
-                        <p class="text-xs text-slate-700">1. Nguyễn Văn A - 85/100đ - Tình trạng: Đạt</p>
+                    <!-- QR Scanner -->
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                        <h2 class="text-blue-900 font-bold text-sm mb-4 uppercase flex items-center gap-2"><span>📷</span> Máy quét Mã QR / Barcode</h2>
+                        <div id="reader" class="bg-slate-100 rounded-lg border border-slate-200 flex-1 min-h-[200px] flex items-center justify-center text-xs text-slate-400 overflow-hidden font-bold uppercase tracking-widest">Khu vực Camera</div>
+                        <button id="cam-btn" onclick="toggleScan()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 mt-4 rounded text-xs font-bold uppercase shadow">BẬT CAMERA QUÉT</button>
+                        <div id="qr-res" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded hidden font-mono text-xs font-bold text-blue-700 break-all text-center"></div>
                     </div>
                 </div>
             </section>
 
-            <!-- TAB: LÀM BÀI THI (Thí sinh) -->
-            <section id="tab-exam-take" class="tab-content no-print">
-                <div class="bg-white p-6 rounded shadow border">
-                    <div class="flex justify-between items-center mb-6 border-b pb-2">
-                        <h2 class="text-blue-900 font-bold uppercase text-lg">Bài kiểm tra năng lực CNS</h2>
-                        <span class="text-red-600 font-bold font-mono">TG: 45:00</span>
+            <!-- ================= GIÁM KHẢO: QUẢN LÝ THI ================= -->
+            <section id="tab-exam-manage" class="tab-content no-print max-w-4xl mx-auto">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-yellow-400">
+                    <div class="flex justify-between items-end mb-6">
+                        <div>
+                            <h2 class="text-blue-900 font-bold uppercase text-lg mb-1">Bảng điểm Đào tạo CNS/ATM</h2>
+                            <p class="text-[11px] text-slate-500 font-bold uppercase">Ngân hàng đề tự động tạo 5 câu ngẫu nhiên</p>
+                        </div>
+                        <button onclick="clearExamResults()" class="text-[10px] text-red-500 underline font-bold uppercase">Xóa lịch sử thi</button>
                     </div>
-                    <div class="space-y-4">
-                        <div class="p-4 bg-slate-50 border rounded">
-                            <p class="font-bold text-sm mb-3">Câu 1: Băng tần liên lạc VHF Hàng không (Thoại) nằm trong dải tần số nào?</p>
-                            <label class="block text-sm mb-2"><input type="radio" name="q1" class="mr-2"> 108.000 MHz - 117.975 MHz</label>
-                            <label class="block text-sm mb-2"><input type="radio" name="q1" class="mr-2"> 118.000 MHz - 136.975 MHz</label>
-                            <label class="block text-sm mb-2"><input type="radio" name="q1" class="mr-2"> 328.600 MHz - 335.400 MHz</label>
+                    
+                    <div class="overflow-x-auto rounded border border-slate-200">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-left">
+                                    <th class="p-3 border-b font-bold">Thời gian</th>
+                                    <th class="p-3 border-b font-bold">Tên Thí sinh</th>
+                                    <th class="p-3 border-b font-bold text-center">Điểm số</th>
+                                    <th class="p-3 border-b font-bold text-center">Xếp loại</th>
+                                </tr>
+                            </thead>
+                            <tbody id="exam-results-table">
+                                <!-- Kết quả thi render tại đây -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= THÍ SINH: LÀM BÀI THI ================= -->
+            <section id="tab-exam-take" class="tab-content no-print max-w-3xl mx-auto">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-blue-200" id="exam-container">
+                    <div class="flex justify-between items-center mb-6 border-b-2 border-slate-100 pb-4">
+                        <div>
+                            <h2 class="text-blue-900 font-bold uppercase text-lg">Bài kiểm tra Kiến thức VHF & ICAO</h2>
+                            <p class="text-[11px] text-slate-500 mt-1 uppercase font-bold">Thí sinh: <span id="candidate-name" class="text-blue-700"></span></p>
                         </div>
                     </div>
-                    <button class="mt-6 w-full bg-green-600 text-white py-3 rounded font-bold uppercase shadow">Nộp bài kiểm tra</button>
+                    
+                    <div id="exam-questions" class="space-y-6">
+                        <!-- Đề thi tạo tự động render tại đây -->
+                    </div>
+                    
+                    <button id="btn-submit-exam" onclick="submitExam()" class="mt-8 w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded font-bold uppercase tracking-widest shadow-lg text-sm">NỘP BÀI KIỂM TRA</button>
+                </div>
+                
+                <!-- Giao diện hiển thị kết quả sau khi nộp -->
+                <div id="exam-result-view" class="hidden bg-white p-8 rounded-xl shadow-sm border border-green-400 text-center">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-2">ĐÃ NỘP BÀI THÀNH CÔNG</h2>
+                    <p class="text-sm text-slate-500 mb-6">Điểm số của bạn đã được ghi nhận trên hệ thống Giám khảo.</p>
+                    <div class="inline-block p-6 bg-slate-50 rounded-full border-4 border-green-500 mb-6">
+                        <span id="final-score" class="text-4xl font-bold text-green-600"></span>
+                    </div>
+                    <p id="final-status" class="font-bold uppercase tracking-widest mb-6 text-lg"></p>
+                    <button onclick="logout()" class="bg-slate-800 text-white px-6 py-2 rounded font-bold uppercase text-xs">Thoát hệ thống</button>
                 </div>
             </section>
 
-            <!-- TAB: TÀI LIỆU (Tất cả Role) -->
-            <section id="tab-docs" class="tab-content no-print">
-                <div class="bg-white p-4 rounded shadow border">
-                    <h2 class="text-blue-900 font-bold uppercase text-sm mb-4">Tài liệu & SOP</h2>
-                    <ul class="space-y-2 text-sm">
-                        <li class="p-3 bg-red-50 border-l-4 border-red-500 rounded flex justify-between">
-                            <span>SOP: Tổng hỏng trạm Radar Quy Nhơn (Cập nhật: 12/2025)</span>
-                            <span class="text-blue-600 underline cursor-pointer text-xs">Xem chi tiết</span>
+            <!-- ================= SHARED: TÀI LIỆU ================= -->
+            <section id="tab-docs" class="tab-content no-print max-w-4xl mx-auto">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-blue-900 font-bold uppercase text-sm mb-4">Hệ thống Tài liệu SOP & Manual</h2>
+                    <ul class="space-y-3 text-sm font-bold">
+                        <li class="p-4 bg-red-50 border-l-4 border-red-500 rounded flex justify-between items-center hover:bg-red-100 transition-colors">
+                            <div class="flex flex-col">
+                                <span class="text-red-900 uppercase">SOP 01: Quy trình xử lý Tổng hỏng trạm Radar Quy Nhơn</span>
+                                <span class="text-[10px] text-red-600 mt-1">Sửa đổi lần cuối: 12/2025</span>
+                            </div>
+                            <button class="bg-white border border-red-200 text-red-600 px-3 py-1 rounded text-[10px] uppercase shadow-sm">Xem chi tiết</button>
                         </li>
-                        <li class="p-3 bg-blue-50 border-l-4 border-blue-500 rounded flex justify-between">
-                            <span>Manual: Sitti MULTIFONO M800IP VCCS</span>
-                            <span class="text-blue-600 underline cursor-pointer text-xs">Tải PDF</span>
+                        <li class="p-4 bg-blue-50 border-l-4 border-blue-500 rounded flex justify-between items-center hover:bg-blue-100 transition-colors">
+                            <div class="flex flex-col">
+                                <span class="text-blue-900 uppercase">Manual: Sitti MULTIFONO M800IP VCCS - Hardware Ref.</span>
+                                <span class="text-[10px] text-blue-600 mt-1">Tài liệu Nhà sản xuất - Tiếng Anh</span>
+                            </div>
+                            <button class="bg-white border border-blue-200 text-blue-600 px-3 py-1 rounded text-[10px] uppercase shadow-sm">Tải PDF</button>
                         </li>
                     </ul>
                 </div>
@@ -194,7 +236,6 @@
 
     <script>
         // ================= DỮ LIỆU EXCEL MÔ PHỎNG (STRICT DATA) =================
-        // Dữ liệu nội bộ đóng vai trò là "File Spreadsheeet" không thể chỉnh sửa tự do bằng form input
         const spreadsheetData = [
             { id: "CNS-VCCS-01", name: "Card VDA Sitti M800IP", sn: "SN-8821", loc: "HCM ACC / Slot 1" },
             { id: "CNS-VCCS-02", name: "Card E1 Sitti M800IP", sn: "SN-8835", loc: "HCM ACC / Slot 2" },
@@ -202,12 +243,33 @@
             { id: "CNS-ROUT-01", name: "Nokia 7750 SR", sn: "NK-SR-112", loc: "Phòng Server 1" }
         ];
 
+        // ================= NGÂN HÀNG CÂU HỎI THI TỰ ĐỘNG (100-Question Lib Subset) =================
+        const questionBank = [
+            { id: 1, q: "Băng tần liên lạc VHF Hàng không (Thoại) nằm trong dải tần số nào?", options: ["108.000 MHz - 117.975 MHz", "118.000 MHz - 136.975 MHz", "328.600 MHz - 335.400 MHz"], ans: 1 },
+            { id: 2, q: "Theo chuẩn ICAO, khoảng cách kênh (channel spacing) tiêu chuẩn cho VHF thoại hiện nay là bao nhiêu?", options: ["25 kHz hoặc 8.33 kHz", "50 kHz", "12.5 kHz"], ans: 0 },
+            { id: 3, q: "Đặc điểm truyền sóng đặc trưng của dải tần VHF là gì?", options: ["Phản xạ qua tầng điện ly (Ionosphere)", "Truyền theo bề mặt trái đất (Ground wave)", "Truyền theo đường thẳng (Line of Sight - LOS)"], ans: 2 },
+            { id: 4, q: "Trong hệ thống VCCS Sitti M800IP, loại Card nào đóng vai trò quản lý kết nối thoại IP/E1 ra ngoại vi?", options: ["Card VDA", "Card Máy lẻ (Extension)", "Card Nguồn"], ans: 0 },
+            { id: 5, q: "Mức SWR (Standing Wave Ratio) bao nhiêu trên hệ thống Anten VHF thì thiết bị Jotron sẽ bắt đầu cảnh báo hoặc giảm công suất phát?", options: ["SWR > 1.1", "SWR > 1.5", "SWR > 3.0"], ans: 1 },
+            { id: 6, q: "Hệ điều hành cốt lõi được sử dụng để cấu hình High Availability (HA) trên các server của hệ thống Sitti thường là gì?", options: ["Windows Server", "Linux (CentOS / RedHat)", "Unix"], ans: 1 },
+            { id: 7, q: "Lệnh CLI nào trên Nokia 7750 SR dùng để kiểm tra trạng thái các port vật lý?", options: ["show port", "show interfaces", "display port status"], ans: 0 }
+        ];
+
+        let currentExamAnswers = []; // Lưu đáp án đúng của đề hiện tại
+        let currentCandidate = "";
+
         // ================= HỆ THỐNG PHÂN QUYỀN =================
         function performLogin() {
             const role = document.getElementById('login-role').value;
+            const user = document.getElementById('login-user').value;
+            
+            if(!user.trim()) return alert("Vui lòng nhập Tên / Mã NV");
+
+            currentCandidate = user;
             document.getElementById('login-view').classList.add('hidden');
             document.getElementById('app-view').classList.remove('hidden');
+            
             document.getElementById('user-role-display').innerText = role;
+            document.getElementById('user-name-display').innerText = user;
 
             // Ẩn tất cả Tab Navigation
             document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -216,16 +278,24 @@
             });
             document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
 
-            // Phân quyền hiển thị
+            // Reset Giao diện Thi
+            document.getElementById('exam-container').classList.remove('hidden');
+            document.getElementById('exam-result-view').classList.add('hidden');
+
+            // Định tuyến chức năng theo Role
             if (role === 'Admin') {
                 ['btn-inv', 'btn-log', 'btn-tools', 'btn-docs'].forEach(id => document.getElementById(id).classList.remove('hidden'));
                 loadInventoryData();
+                renderLogs();
                 switchTab('tab-inv');
             } else if (role === 'Giám khảo') {
                 ['btn-exam-manage', 'btn-docs'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+                renderExamResults();
                 switchTab('tab-exam-manage');
             } else if (role === 'Thí sinh') {
                 ['btn-exam-take', 'btn-docs'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+                document.getElementById('candidate-name').innerText = user;
+                generateRandomExam();
                 switchTab('tab-exam-take');
             }
         }
@@ -241,24 +311,23 @@
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-active'));
             
             document.getElementById(tabId).classList.add('active');
-            // Tìm nút tương ứng và add class active
             const btnId = 'btn-' + tabId.replace('tab-', '');
             if(document.getElementById(btnId)) document.getElementById(btnId).classList.add('nav-active');
         }
 
-        // ================= CHỨC NĂNG IN NHÃN (TỪ DỮ LIỆU EXCEL) =================
+        // ================= TÍNH NĂNG ADMIN: KHO & NHÃN =================
         function loadInventoryData() {
             const tbody = document.getElementById('inventory-table');
             tbody.innerHTML = '';
             spreadsheetData.forEach((item, index) => {
                 tbody.innerHTML += `
-                    <tr class="border-b hover:bg-blue-50 transition-colors">
-                        <td class="p-2 font-mono font-bold text-blue-700">${item.id}</td>
-                        <td class="p-2">${item.name}</td>
-                        <td class="p-2 font-mono">${item.sn}</td>
-                        <td class="p-2">${item.loc}</td>
-                        <td class="p-2 text-center">
-                            <button onclick="pushToPrintZone(${index})" class="bg-indigo-600 text-white px-2 py-1 rounded text-[10px] font-bold">Thêm vào trang in</button>
+                    <tr class="border-b border-slate-100 hover:bg-blue-50 transition-colors">
+                        <td class="p-3 font-mono font-bold text-blue-700">${item.id}</td>
+                        <td class="p-3 font-bold text-slate-700">${item.name}</td>
+                        <td class="p-3 font-mono">${item.sn}</td>
+                        <td class="p-3 text-slate-500">${item.loc}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="pushToPrintZone(${index})" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider shadow">Thêm in</button>
                         </td>
                     </tr>
                 `;
@@ -269,12 +338,12 @@
             const data = spreadsheetData[index];
             const uid = "bc-" + Date.now() + index;
             const html = `
-                <div class="label-item border border-black p-1 w-[60mm] h-[40mm] bg-white flex flex-col print-only relative">
-                    <button onclick="this.parentElement.remove()" class="no-print absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow hover:bg-red-700 cursor-pointer">×</button>
+                <div class="label-item border border-black p-1 w-[60mm] h-[40mm] bg-white flex flex-col print-only relative shadow-sm">
+                    <button onclick="this.parentElement.remove()" class="no-print absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md hover:bg-red-700 cursor-pointer border-2 border-white font-bold">×</button>
                     <table class="w-full text-[9px] border-collapse">
-                        <tr><td class="border border-black p-1">Tên</td><td class="border border-black p-1 font-bold">${data.name}</td></tr>
-                        <tr><td class="border border-black p-1">Mã</td><td class="border border-black p-1 font-bold font-mono">${data.id}</td></tr>
-                        <tr><td class="border border-black p-1">S/N</td><td class="border border-black p-1 font-bold font-mono">${data.sn}</td></tr>
+                        <tr><td class="border border-black p-1 text-slate-600">Tên</td><td class="border border-black p-1 font-bold">${data.name}</td></tr>
+                        <tr><td class="border border-black p-1 text-slate-600">Mã</td><td class="border border-black p-1 font-bold font-mono">${data.id}</td></tr>
+                        <tr><td class="border border-black p-1 text-slate-600">S/N</td><td class="border border-black p-1 font-bold font-mono">${data.sn}</td></tr>
                     </table>
                     <div class="flex-grow flex items-center justify-center border border-black border-t-0 p-1">
                         <svg id="${uid}"></svg>
@@ -284,35 +353,175 @@
             JsBarcode("#" + uid, data.id, { format: "CODE128", displayValue: false, height: 35, width: 1.5, margin: 0 });
         }
 
-        // ================= CÁC TIỆN ÍCH KHÁC =================
+        // ================= TÍNH NĂNG ADMIN: NHẬT KÝ =================
+        function saveLog() {
+            const dev = document.getElementById('log-dev').value;
+            const txt = document.getElementById('log-txt').value;
+            if(!dev || !txt) return alert("Vui lòng điền đủ thông tin thiết bị và mô tả.");
+            
+            const logs = JSON.parse(localStorage.getItem('cns_logs') || '[]');
+            logs.unshift({ dev, txt, time: new Date().toLocaleString('vi-VN') });
+            localStorage.setItem('cns_logs', JSON.stringify(logs));
+            
+            document.getElementById('log-dev').value = '';
+            document.getElementById('log-txt').value = '';
+            renderLogs();
+        }
+
+        function renderLogs() {
+            const logs = JSON.parse(localStorage.getItem('cns_logs') || '[]');
+            document.getElementById('log-list').innerHTML = logs.map(l => `
+                <div class="p-3 bg-slate-50 border border-slate-100 rounded text-xs">
+                    <div class="flex justify-between font-bold text-blue-800 border-b border-slate-200 pb-1 mb-2">
+                        <span>Thiết bị: <span class="font-mono text-indigo-700">${l.dev}</span></span>
+                        <span class="text-[10px] text-slate-400 font-normal">${l.time}</span>
+                    </div>
+                    <div class="text-slate-600 leading-relaxed">${l.txt}</div>
+                </div>`).join('');
+        }
+
+        // ================= TÍNH NĂNG ADMIN: SWR & QR =================
         function calcSWR() {
             const fwd = parseFloat(document.getElementById('fwd-pwr').value);
             const ref = parseFloat(document.getElementById('ref-pwr').value);
             const resDiv = document.getElementById('swr-res');
             if(fwd > 0 && ref >= 0) {
+                if(ref >= fwd) {
+                    resDiv.innerText = "LỖI: P Phản xạ >= P Tới"; resDiv.className = "p-4 border text-center rounded-lg font-mono font-bold text-xl bg-red-100 text-red-600 border-red-300"; return;
+                }
                 const rho = Math.sqrt(ref / fwd);
                 const swr = (1 + rho) / (1 - rho);
-                resDiv.innerText = "SWR: " + swr.toFixed(2);
-                resDiv.style.color = swr > 1.5 ? "red" : "green";
+                resDiv.innerText = "SWR = " + swr.toFixed(2);
+                resDiv.className = swr > 1.5 ? "p-4 border text-center rounded-lg font-mono font-bold text-xl bg-red-100 text-red-600 border-red-300" : "p-4 border text-center rounded-lg font-mono font-bold text-xl bg-green-100 text-green-600 border-green-300";
             }
         }
 
-        // Quét QR
         let scanner = null;
         async function toggleScan() {
+            const btn = document.getElementById('cam-btn');
             if(scanner) return stopScan();
             scanner = new Html5Qrcode("reader");
             try {
                 await scanner.start({facingMode: "environment"}, {fps: 10, qrbox: 200}, (txt) => {
-                    document.getElementById('qr-res').innerText = "DATA: " + txt;
+                    document.getElementById('qr-res').innerText = "DỮ LIỆU: " + txt;
                     document.getElementById('qr-res').classList.remove('hidden');
                     stopScan();
                 });
-            } catch(e) { alert("Lỗi camera!"); }
+                btn.innerText = "DỪNG CAMERA";
+                btn.classList.replace('bg-green-600', 'bg-red-600');
+                btn.classList.replace('hover:bg-green-700', 'hover:bg-red-700');
+            } catch(e) { alert("Lỗi camera! Thiết bị không hỗ trợ hoặc bị chặn quyền."); }
         }
         function stopScan() {
+            const btn = document.getElementById('cam-btn');
             if(scanner) {
                 scanner.stop().then(() => { scanner.clear(); scanner = null; });
+                btn.innerText = "BẬT CAMERA QUÉT";
+                btn.classList.replace('bg-red-600', 'bg-green-600');
+                btn.classList.replace('hover:bg-red-700', 'hover:bg-green-700');
+            }
+        }
+
+        // ================= TÍNH NĂNG ĐÀO TẠO (GIÁM KHẢO & THÍ SINH) =================
+        function generateRandomExam() {
+            const container = document.getElementById('exam-questions');
+            container.innerHTML = '';
+            currentExamAnswers = [];
+            
+            // Xáo trộn thư viện và lấy 5 câu
+            const shuffled = [...questionBank].sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, 5);
+
+            selected.forEach((item, index) => {
+                currentExamAnswers.push(item.ans); // Lưu đáp án
+                
+                let optionsHtml = '';
+                item.options.forEach((opt, optIdx) => {
+                    optionsHtml += `
+                        <label class="block text-sm mb-3 p-3 border border-slate-200 rounded cursor-pointer hover:bg-blue-50 transition-colors">
+                            <input type="radio" name="q${index}" value="${optIdx}" class="mr-3 transform scale-125 accent-blue-600"> 
+                            <span class="font-medium text-slate-700">${opt}</span>
+                        </label>
+                    `;
+                });
+
+                container.innerHTML += `
+                    <div class="p-5 bg-white border-2 border-slate-100 rounded-lg shadow-sm">
+                        <p class="font-bold text-sm mb-4 text-blue-900 leading-relaxed">Câu ${index + 1}: ${item.q}</p>
+                        ${optionsHtml}
+                    </div>
+                `;
+            });
+        }
+
+        function submitExam() {
+            if(currentExamAnswers.length === 0) return;
+            
+            let score = 0;
+            const total = currentExamAnswers.length;
+            
+            for(let i=0; i<total; i++) {
+                const selectedOption = document.querySelector(`input[name="q${i}"]:checked`);
+                if(selectedOption && parseInt(selectedOption.value) === currentExamAnswers[i]) {
+                    score += 1;
+                }
+            }
+
+            const percent = (score / total) * 100;
+            const status = percent >= 80 ? 'ĐẠT YÊU CẦU' : 'KHÔNG ĐẠT';
+            const statusClass = percent >= 80 ? 'text-green-600' : 'text-red-600';
+
+            // Lưu kết quả vào LocalStorage
+            const results = JSON.parse(localStorage.getItem('cns_exams') || '[]');
+            results.unshift({
+                name: currentCandidate,
+                score: `${score}/${total}`,
+                percent: percent,
+                status: status,
+                time: new Date().toLocaleString('vi-VN')
+            });
+            localStorage.setItem('cns_exams', JSON.stringify(results));
+
+            // Hiển thị giao diện hoàn thành
+            document.getElementById('exam-container').classList.add('hidden');
+            const resultView = document.getElementById('exam-result-view');
+            resultView.classList.remove('hidden');
+            
+            document.getElementById('final-score').innerText = `${percent} Điểm`;
+            const statusEl = document.getElementById('final-status');
+            statusEl.innerText = status;
+            statusEl.className = `font-bold uppercase tracking-widest mb-6 text-lg ${statusClass}`;
+        }
+
+        function renderExamResults() {
+            const results = JSON.parse(localStorage.getItem('cns_exams') || '[]');
+            const tbody = document.getElementById('exam-results-table');
+            tbody.innerHTML = '';
+            
+            if(results.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 font-bold italic">Chưa có dữ liệu bài thi.</td></tr>`;
+                return;
+            }
+
+            results.forEach(r => {
+                const badgeColor = r.percent >= 80 ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200';
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-yellow-50">
+                        <td class="p-3 text-xs text-slate-500">${r.time}</td>
+                        <td class="p-3 font-bold text-blue-900">${r.name}</td>
+                        <td class="p-3 text-center font-mono font-bold text-lg">${r.score}</td>
+                        <td class="p-3 text-center">
+                            <span class="px-3 py-1 rounded text-[10px] font-bold border uppercase ${badgeColor}">${r.status}</span>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function clearExamResults() {
+            if(confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử điểm thi?")) {
+                localStorage.removeItem('cns_exams');
+                renderExamResults();
             }
         }
     </script>
