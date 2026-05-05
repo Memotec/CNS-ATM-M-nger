@@ -3,169 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNS/ATM Manager v3.0 - QR Fixed</title>
+    <title>CNS Manager - Camera Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 1. TÍCH HỢP THƯ VIỆN QR CHUYÊN DỤNG -->
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- Thư viện quét QR -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        .active-tab { border-bottom: 3px solid #1d4ed8; color: #1d4ed8; }
-        .hidden { display: none; }
-        /* Tùy chỉnh khung camera */
-        #qr-reader {
-            width: 100%;
-            max-width: 450px;
-            margin: 0 auto;
-            border: 2px solid #ddd;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        #qr-reader__dashboard { padding: 10px; border-top: 1px solid #eee; }
+        #reader { width: 100%; border-radius: 12px; overflow: hidden; }
+        .tab-content { display: none; }
+        .active { display: block; }
     </style>
 </head>
-<body class="bg-gray-50 font-sans text-gray-900">
+<body class="bg-slate-100">
 
-    <header class="bg-blue-950 text-white p-4 shadow-lg sticky top-0 z-50">
-        <h1 class="text-xl font-bold text-center uppercase">Quản lý Kỹ thuật VHF & VCCS</h1>
+    <header class="bg-blue-900 text-white p-4 shadow-md text-center">
+        <h1 class="font-bold uppercase">Hệ thống Kỹ thuật VHF/VCCS</h1>
     </header>
 
-    <nav class="bg-white shadow sticky top-[61px] z-40 border-b flex justify-around">
-        <button onclick="showTab('log')" id="tab-log" class="p-4 font-semibold active-tab flex-1 text-center">Nhật ký</button>
-        <button onclick="showTab('sop')" id="tab-sop" class="p-4 font-semibold flex-1 text-center">Tra cứu SOP</button>
-        <button onclick="showTab('asset')" id="tab-asset" class="p-4 font-semibold flex-1 text-center text-blue-700">Tài sản (QR)</button>
+    <nav class="flex bg-white shadow mb-4">
+        <button onclick="switchTab('log')" class="flex-1 py-3 font-bold border-b-2">Nhật ký</button>
+        <button onclick="switchTab('qr')" class="flex-1 py-3 font-bold border-b-2 text-blue-600 border-blue-600">Quét QR</button>
     </nav>
 
-    <main class="container mx-auto p-4 max-w-5xl">
-        <!-- [TAB 1 & 2 GIỮ NGUYÊN HOẶC ĐỂ TRỐNG] -->
-        <section id="content-log" class="tab-content hidden"><p class="p-4 bg-white rounded-lg shadow">Nhật ký... (vẫn hoạt động cục bộ)</p></section>
-        <section id="content-sop" class="tab-content hidden"><p class="p-4 bg-white rounded-lg shadow">SOP... (vẫn hoạt động cục bộ)</p></section>
-        <!-- ===================================== -->
+    <main class="p-4 max-w-2xl mx-auto">
+        <!-- Tab Nhật ký -->
+        <section id="log" class="tab-content bg-white p-4 rounded-lg shadow">
+            <h2 class="font-bold mb-2 text-blue-800">Nhật ký trực ca</h2>
+            <div id="log-list" class="text-sm space-y-2"></div>
+        </section>
 
-        <!-- TAB 3: QUẢN LÝ TÀI SẢN & QR CODE (ĐÃ SỬA LỖI) -->
-        <section id="content-asset" class="tab-content">
-            <div class="bg-white p-6 rounded-xl shadow-sm border space-y-6">
-                
-                <!-- Khu vực Quét mã -->
-                <div class="p-4 text-center border-2 border-dashed border-blue-100 rounded-xl bg-blue-50">
-                    <h3 class="font-bold text-blue-900 mb-2">🔍 Quét mã Module thiết bị</h3>
-                    <p class="text-xs text-gray-600 mb-4">Hệ thống đang sẵn sàng quét mã để kiểm tra thông tin.</p>
-                    
-                    <!-- 2. KHUNG HIỂN THỊ CAMERA -->
-                    <div id="qr-reader" class="mb-4 hidden"></div>
-                    
-                    <div id="qr-controls" class="space-x-2">
-                        <button id="start-scan" onclick="startScanning()" class="bg-green-600 text-white px-5 py-2.5 rounded-lg font-bold hover:bg-green-700 active:scale-95 transition text-sm">
-                            Bật Camera Quét mã QR
-                        </button>
-                        <button id="stop-scan" onclick="stopScanning()" class="bg-gray-500 text-white px-5 py-2.5 rounded-lg font-bold hidden text-sm">
-                            Tắt Camera
-                        </button>
-                    </div>
-
-                    <!-- 3. VÙNG HIỂN THỊ KẾT QUẢ QUÉT -->
-                    <div id="qr-result-box" class="mt-4 p-4 bg-white rounded-lg border-2 border-green-200 hidden">
-                        <p class="text-xs uppercase text-green-700 font-bold">Kết quả quét thành công:</p>
-                        <p id="qr-result-data" class="font-mono text-lg font-bold text-slate-800 break-all mt-1"></p>
-                        <p class="text-xs text-gray-500 mt-2">Dữ liệu này có thể được dùng để tra cứu trong kho.</p>
-                    </div>
-                </div>
-
-                <!-- Bảng danh mục thiết bị (Ví dụ) -->
-                <div class="border-t pt-4">
-                    <h3 class="font-semibold mb-3">Danh mục Module tiêu biểu (Ví dụ):</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm border">
-                            <thead>
-                                <tr class="bg-gray-100 border-b">
-                                    <th class="p-3 border-r">Mã số (QR)</th>
-                                    <th class="p-3 border-r">Tên Module</th>
-                                    <th class="p-3 border-r">Số Serial</th>
-                                    <th class="p-3">Vị trí</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="p-3 border-r font-mono bg-slate-50">SITTI-E1-001</td>
-                                    <td class="p-3 border-r">Card E1 Sitti M800IP</td>
-                                    <td class="p-3 border-r">SN-99283</td>
-                                    <td class="p-3">Slot 05 - Subrack A</td>
-                                </tr>
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="p-3 border-r font-mono bg-slate-50">JOTRON-TX-127.5</td>
-                                    <td class="p-3 border-r">Máy phát Jotron 7000</td>
-                                    <td class="p-3 border-r">SN-J78821</td>
-                                    <td class="p-3">Trạm VHF A - Kệ 1</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <!-- Tab Quét QR -->
+        <section id="qr" class="tab-content active bg-white p-4 rounded-lg shadow">
+            <h2 class="font-bold mb-4 text-blue-800">Quản lý Tài sản & QR Code</h2>
+            
+            <div id="reader" class="mb-4 bg-slate-200"></div>
+            
+            <div class="flex gap-2">
+                <button onclick="startScan()" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold">BẬT CAMERA</button>
+                <button onclick="stopScan()" class="flex-1 bg-red-500 text-white py-3 rounded-lg font-bold">TẮT</button>
             </div>
+
+            <div id="result" class="mt-4 p-3 bg-green-50 border border-green-200 rounded hidden text-center">
+                <p class="text-xs text-green-600 font-bold uppercase">Kết quả quét:</p>
+                <p id="qr-text" class="text-lg font-mono font-bold text-slate-800"></p>
+            </div>
+            
+            <p id="error-msg" class="mt-2 text-red-500 text-xs italic text-center"></p>
         </section>
     </main>
 
     <script>
-        // --- Code Chuyển Tab (Giữ nguyên) ---
-        function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('nav button').forEach(el => el.classList.remove('active-tab', 'text-blue-700'));
-            
-            document.getElementById('content-' + tabName).classList.remove('hidden');
-            document.getElementById('tab-' + tabName).classList.add('active-tab', 'text-blue-700');
-            if (tabName !== 'asset') stopScanning();
+        let scanner = null;
+
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if (id !== 'qr') stopScan();
         }
 
-        // --- 4. JS XỬ LÝ QUÉT MÃ QR (CẬP NHẬT MỚI) ---
-        var html5QrcodeScanner = null;
+        async function startScan() {
+            const errorEl = document.getElementById('error-msg');
+            const resultBox = document.getElementById('result');
+            errorEl.innerText = "";
+            resultBox.classList.add('hidden');
 
-        function startScanning() {
-            // Hiển thị khung camera và các nút
-            document.getElementById('qr-reader').classList.remove('hidden');
-            document.getElementById('start-scan').classList.add('hidden');
-            document.getElementById('stop-scan').classList.remove('hidden');
-            document.getElementById('qr-result-box').classList.add('hidden'); // Ẩn kết quả cũ
+            // Kiểm tra xem trình duyệt có hỗ trợ camera không
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                errorEl.innerText = "Lỗi: Trình duyệt của bạn không hỗ trợ camera hoặc đang dùng HTTP thay vì HTTPS.";
+                return;
+            }
 
-            // Khởi tạo thư viện quét
-            html5QrcodeScanner = new Html5QrcodeScanner(
-                "qr-reader", { 
-                    fps: 10, // Số khung hình trên giây
-                    qrbox: {width: 250, height: 250}, // Khung vuông quét
-                    aspectRatio: 1.0 // Tỷ lệ khung hình vuông
-                }
-            );
-            
-            // Bắt đầu render
-            html5QrcodeScanner.render(onScanSuccess, onScanError);
-        }
+            if (!scanner) {
+                scanner = new Html5Qrcode("reader");
+            }
 
-        function stopScanning() {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear().then(() => {
-                    // Dọn dẹp sau khi tắt camera
-                    document.getElementById('qr-reader').classList.add('hidden');
-                    document.getElementById('stop-scan').classList.add('hidden');
-                    document.getElementById('start-scan').classList.remove('hidden');
-                    html5QrcodeScanner = null;
-                }).catch(err => {
-                    console.error("Lỗi khi tắt camera:", err);
-                });
+            try {
+                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+                
+                await scanner.start(
+                    { facingMode: "environment" }, // Ưu tiên camera sau
+                    config,
+                    (decodedText) => {
+                        document.getElementById('qr-text').innerText = decodedText;
+                        resultBox.classList.remove('hidden');
+                        stopScan(); // Tắt sau khi quét xong
+                    }
+                );
+            } catch (err) {
+                errorEl.innerText = "Không thể bật camera. Hãy kiểm tra quyền truy cập (Permission) trên trình duyệt.";
+                console.error(err);
             }
         }
 
-        // Hàm xử lý khi quét thành công
-        function onScanSuccess(decodedText, decodedResult) {
-            console.log(`Đã quét: ${decodedText}`);
-            
-            // Hiển thị kết quả vào box
-            document.getElementById('qr-result-data').innerText = decodedText;
-            document.getElementById('qr-result-box').classList.remove('hidden');
-
-            // Tự động tắt camera để tiết kiệm pin
-            stopScanning();
-        }
-
-        function onScanError(errorMessage) {
-            // Lỗi khi quét, thường do camera chưa nét hoặc mã QR mờ
-            // Ta không nên alert ở đây vì lỗi này xảy ra liên tục khi chưa quét được
+        function stopScan() {
+            if (scanner) {
+                scanner.stop().then(() => {
+                    scanner.clear();
+                    scanner = null;
+                }).catch(err => console.warn("Lỗi khi tắt camera: ", err));
+            }
         }
     </script>
 </body>
