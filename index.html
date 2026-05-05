@@ -3,103 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNS Manager - Camera Fix</title>
+    <title>CNS Manager - QR Generator & Scanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Thư viện quét QR -->
+    <!-- Thư viện Quét QR -->
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- Thư viện Tạo mã QR -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        #reader { width: 100%; border-radius: 12px; overflow: hidden; }
         .tab-content { display: none; }
         .active { display: block; }
+        #qrcode img { margin: 0 auto; border: 10px solid white; shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);}
     </style>
 </head>
-<body class="bg-slate-100">
+<body class="bg-slate-100 font-sans">
 
     <header class="bg-blue-900 text-white p-4 shadow-md text-center">
-        <h1 class="font-bold uppercase">Hệ thống Kỹ thuật VHF/VCCS</h1>
+        <h1 class="font-bold uppercase tracking-tight">Hệ thống Kỹ thuật VHF/VCCS</h1>
+        <p class="text-[10px] opacity-70">CÔNG CỤ TẠO & QUẢN LÝ TÀI SẢN QR</p>
     </header>
 
-    <nav class="flex bg-white shadow mb-4">
-        <button onclick="switchTab('log')" class="flex-1 py-3 font-bold border-b-2">Nhật ký</button>
-        <button onclick="switchTab('qr')" class="flex-1 py-3 font-bold border-b-2 text-blue-600 border-blue-600">Quét QR</button>
+    <nav class="flex bg-white shadow sticky top-0 z-50">
+        <button onclick="switchTab('scan')" id="btn-scan" class="flex-1 py-3 font-bold border-b-2 border-blue-600 text-blue-600">QUÉT MÃ</button>
+        <button onclick="switchTab('gen')" id="btn-gen" class="flex-1 py-3 font-bold border-b-2 border-transparent">TẠO NHÃN QR</button>
     </nav>
 
     <main class="p-4 max-w-2xl mx-auto">
-        <!-- Tab Nhật ký -->
-        <section id="log" class="tab-content bg-white p-4 rounded-lg shadow">
-            <h2 class="font-bold mb-2 text-blue-800">Nhật ký trực ca</h2>
-            <div id="log-list" class="text-sm space-y-2"></div>
+        
+        <!-- PHÂN HỆ 1: QUÉT MÃ QR (SCANNER) -->
+        <section id="scan" class="tab-content active space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow border">
+                <h2 class="font-bold text-slate-700 mb-4 flex items-center">🔍 Kiểm tra thiết bị</h2>
+                <div id="reader" class="rounded-lg overflow-hidden bg-slate-200"></div>
+                <div class="flex gap-2 mt-4">
+                    <button onclick="startScan()" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold shadow-lg active:scale-95 transition">BẬT CAMERA</button>
+                    <button onclick="stopScan()" class="px-6 bg-slate-500 text-white py-3 rounded-lg font-bold">TẮT</button>
+                </div>
+                <div id="scan-result" class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden">
+                    <p class="text-[10px] font-bold text-blue-500 uppercase">Thông tin thiết bị:</p>
+                    <p id="scan-text" class="text-lg font-mono font-bold text-slate-800 break-all"></p>
+                </div>
+            </div>
         </section>
 
-        <!-- Tab Quét QR -->
-        <section id="qr" class="tab-content active bg-white p-4 rounded-lg shadow">
-            <h2 class="font-bold mb-4 text-blue-800">Quản lý Tài sản & QR Code</h2>
-            
-            <div id="reader" class="mb-4 bg-slate-200"></div>
-            
-            <div class="flex gap-2">
-                <button onclick="startScan()" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold">BẬT CAMERA</button>
-                <button onclick="stopScan()" class="flex-1 bg-red-500 text-white py-3 rounded-lg font-bold">TẮT</button>
+        <!-- PHÂN HỆ 2: TẠO MÃ QR (GENERATOR) -->
+        <section id="gen" class="tab-content space-y-4">
+            <div class="bg-white p-5 rounded-xl shadow border">
+                <h2 class="font-bold text-slate-700 mb-4">🏷️ Tạo nhãn thiết bị mới</h2>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500">MÃ ĐỊNH DANH (SERIAL/ID)</label>
+                        <input type="text" id="qr-input" placeholder="Ví dụ: JOTRON-TX-01" 
+                            class="w-full border-2 border-slate-100 p-3 rounded-lg focus:border-blue-500 outline-none font-mono">
+                    </div>
+                    <button onclick="generateQR()" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-green-700 transition">TẠO MÃ QR</button>
+                </div>
+
+                <div id="qr-output-area" class="mt-8 text-center hidden">
+                    <div id="qrcode" class="inline-block p-2 bg-white shadow-sm border"></div>
+                    <p class="mt-3 text-sm font-bold text-slate-700" id="qr-label-text"></p>
+                    <button onclick="window.print()" class="mt-4 text-blue-600 text-xs underline">In nhãn này (Ctrl + P)</button>
+                </div>
             </div>
 
-            <div id="result" class="mt-4 p-3 bg-green-50 border border-green-200 rounded hidden text-center">
-                <p class="text-xs text-green-600 font-bold uppercase">Kết quả quét:</p>
-                <p id="qr-text" class="text-lg font-mono font-bold text-slate-800"></p>
+            <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                <p class="text-xs text-amber-800">
+                    <strong>💡 Lưu ý:</strong> Bạn nên nhập mã ngắn gọn (ví dụ: SN của Card) để mã QR đơn giản, giúp camera quét nhanh hơn trong điều kiện thiếu sáng của phòng máy.
+                </p>
             </div>
-            
-            <p id="error-msg" class="mt-2 text-red-500 text-xs italic text-center"></p>
         </section>
+
     </main>
 
     <script>
-        let scanner = null;
-
+        // Chuyển Tab
         function switchTab(id) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(b => {
+                b.classList.remove('text-blue-600', 'border-blue-600');
+                b.classList.add('border-transparent');
+            });
+            
             document.getElementById(id).classList.add('active');
-            if (id !== 'qr') stopScan();
+            document.getElementById('btn-' + id).classList.add('text-blue-600', 'border-blue-600');
+            if (id !== 'scan') stopScan();
         }
 
+        // --- LOGIC TẠO MÃ QR ---
+        function generateQR() {
+            const input = document.getElementById('qr-input').value;
+            if(!input) return alert("Vui lòng nhập mã thiết bị!");
+
+            const outputArea = document.getElementById('qr-output-area');
+            const qrcodeDiv = document.getElementById('qrcode');
+            
+            // Xóa mã cũ nếu có
+            qrcodeDiv.innerHTML = "";
+            outputArea.classList.remove('hidden');
+            
+            // Tạo mã mới
+            new QRCode(qrcodeDiv, {
+                text: input,
+                width: 180,
+                height: 180,
+                colorDark : "#0f172a",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H // Độ bền cao nhất để quét dễ
+            });
+
+            document.getElementById('qr-label-text').innerText = input;
+        }
+
+        // --- LOGIC QUÉT MÃ QR ---
+        let scanner = null;
         async function startScan() {
-            const errorEl = document.getElementById('error-msg');
-            const resultBox = document.getElementById('result');
-            errorEl.innerText = "";
-            resultBox.classList.add('hidden');
-
-            // Kiểm tra xem trình duyệt có hỗ trợ camera không
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                errorEl.innerText = "Lỗi: Trình duyệt của bạn không hỗ trợ camera hoặc đang dùng HTTP thay vì HTTPS.";
-                return;
-            }
-
-            if (!scanner) {
-                scanner = new Html5Qrcode("reader");
-            }
+            document.getElementById('scan-result').classList.add('hidden');
+            if (!scanner) scanner = new Html5Qrcode("reader");
 
             try {
-                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-                
                 await scanner.start(
-                    { facingMode: "environment" }, // Ưu tiên camera sau
-                    config,
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
                     (decodedText) => {
-                        document.getElementById('qr-text').innerText = decodedText;
-                        resultBox.classList.remove('hidden');
-                        stopScan(); // Tắt sau khi quét xong
+                        document.getElementById('scan-text').innerText = decodedText;
+                        document.getElementById('scan-result').classList.remove('hidden');
+                        // Phát tiếng bíp nếu muốn
+                        stopScan();
                     }
                 );
             } catch (err) {
-                errorEl.innerText = "Không thể bật camera. Hãy kiểm tra quyền truy cập (Permission) trên trình duyệt.";
-                console.error(err);
+                alert("Không thể mở Camera. Đảm bảo bạn đang dùng HTTPS và đã cấp quyền.");
             }
         }
 
         function stopScan() {
             if (scanner) {
-                scanner.stop().then(() => {
-                    scanner.clear();
-                    scanner = null;
-                }).catch(err => console.warn("Lỗi khi tắt camera: ", err));
+                scanner.stop().then(() => { scanner.clear(); scanner = null; });
             }
         }
     </script>
