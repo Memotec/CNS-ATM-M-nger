@@ -3,221 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNS Manager - VATM Southern</title>
+    <title>CNS Manager Pro - VATM Southern</title>
+    <!-- Thư viện hỗ trợ -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    
     <style>
+        @font-face { font-family: 'TNR'; src: local('Times New Roman'); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .nav-active { border-bottom: 4px solid #fff; opacity: 1 !important; }
-        #qrcode-output img { margin: 0 auto; border: 4px solid white; border-radius: 4px; }
+        .nav-active { border-bottom: 4px solid white; opacity: 1 !important; }
+        
+        /* Style cho phân hệ IN NHÃN */
+        .input-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 2px; color: #475569; }
+        .input-group input { width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; }
+        .size-val { width: 50px; font-weight: bold; color: #2563eb; text-align: right; font-size: 12px; }
+        
+        /* Khu vực hiển thị nhãn Barcode */
+        #print-zone { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px; }
+        .label-item { background: white; border: 0.1mm solid #000; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; page-break-inside: avoid; font-family: 'TNR', serif; }
+        .label-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .label-table td { border: 0.5pt solid black; padding: 1px 4px; font-size: 9pt; color: black; overflow: hidden; white-space: nowrap; }
+        .col-title { width: 30%; font-weight: normal; }
+        .col-content { width: 70%; font-weight: bold; }
+        .barcode-section { width: 100%; flex-grow: 1; display: flex; justify-content: center; align-items: center; border: 0.5pt solid black; border-top: none; padding: 1mm 0; }
+        .barcode-wrapper { width: 35mm; display: flex; justify-content: center; align-items: center; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #print-zone, #print-zone * { visibility: visible; }
+            #print-zone { position: absolute; left: 0; top: 0; display: block; }
+            .label-item { margin-bottom: 5mm; border: 0.1mm solid #000; }
+            @page { margin: 5mm; }
+        }
     </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800">
+<body class="bg-slate-100 font-sans text-slate-800">
 
-    <!-- Header Chuyên ngành -->
     <header class="bg-[#1e3a8a] text-white p-4 shadow-lg sticky top-0 z-50">
-        <div class="flex justify-between items-center max-w-4xl mx-auto">
+        <div class="flex justify-between items-center max-w-5xl mx-auto">
             <div>
-                <h1 class="text-sm font-bold uppercase tracking-widest">Đội Thông Tin - Trung Tâm BĐKT</h1>
-                <p class="text-[10px] opacity-80">Hệ thống Quản lý Kỹ thuật VHF & VCCS</p>
+                <h1 class="text-sm font-bold uppercase tracking-widest">Đội Thông Tin - VATM</h1>
+                <p class="text-[10px] opacity-80">Quản lý Kỹ thuật & In Nhãn Tài Sản</p>
             </div>
             <div class="text-right text-[10px]">
-                <p>User: Trần Văn Trường</p>
-                <p>Ver: 2026.05</p>
+                <p>KTV: Trần Văn Trường</p>
+                <p id="clock"></p>
             </div>
         </div>
     </header>
 
-    <!-- Menu Điều hướng (Khôi phục đủ 4 chức năng) -->
     <nav class="bg-[#2563eb] text-white flex justify-around sticky top-[62px] z-40 shadow-md">
-        <button onclick="switchTab('tab-inv')" id="btn-inv" class="py-3 px-1 text-[11px] font-bold opacity-70 nav-active">THIẾT BỊ</button>
-        <button onclick="switchTab('tab-log')" id="btn-log" class="py-3 px-1 text-[11px] font-bold opacity-70">NHẬT KÝ</button>
-        <button onclick="switchTab('tab-sop')" id="btn-sop" class="py-3 px-1 text-[11px] font-bold opacity-70">SOP/FIX</button>
-        <button onclick="switchTab('tab-qr')" id="btn-qr" class="py-3 px-1 text-[11px] font-bold opacity-70 uppercase text-amber-300">Quét/Tạo QR</button>
+        <button onclick="switchTab('tab-inv')" id="btn-inv" class="py-3 px-1 text-[10px] font-bold opacity-70 nav-active">THIẾT BỊ</button>
+        <button onclick="switchTab('tab-log')" id="btn-log" class="py-3 px-1 text-[10px] font-bold opacity-70">NHẬT KÝ</button>
+        <button onclick="switchTab('tab-print')" id="btn-print" class="py-3 px-1 text-[10px] font-bold opacity-70 text-amber-300">IN NHÃN BC</button>
+        <button onclick="switchTab('tab-qr')" id="btn-qr" class="py-3 px-1 text-[10px] font-bold opacity-70">QUÉT/TẠO QR</button>
     </nav>
 
-    <main class="p-4 max-w-4xl mx-auto">
+    <main class="p-4 max-w-5xl mx-auto">
 
-        <!-- 1. QUẢN LÝ THIẾT BỊ (INVENTORY) -->
+        <!-- TAB 1: THIẾT BỊ -->
         <section id="tab-inv" class="tab-content active">
             <div class="bg-white p-4 rounded-xl shadow border">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="font-bold text-blue-900 uppercase">Danh mục Card & Thiết bị</h2>
-                    <span class="text-xs bg-gray-100 px-2 py-1 rounded" id="inv-count">0 thiết bị</span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr class="bg-slate-100">
-                                <th class="p-2 border">Tên Card/Thiết bị</th>
-                                <th class="p-2 border">Số Serial</th>
-                                <th class="p-2 border">Vị trí (Slot)</th>
-                                <th class="p-2 border">Trạng thái</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inventory-list">
-                            <!-- Dữ liệu mẫu liên quan đến VCCS/VHF -->
-                            <tr><td class="p-2 border font-medium">Card E1 M800IP</td><td class="p-2 border font-mono">SN-SITTI-001</td><td class="p-2 border text-blue-600 font-bold">Slot 05</td><td class="p-2 border text-green-600">Online</td></tr>
-                            <tr><td class="p-2 border font-medium">VHF Jotron 7100</td><td class="p-2 border font-mono">SN-JOT-7182</td><td class="p-2 border text-blue-600 font-bold">Rack 02</td><td class="p-2 border text-green-600">Standby</td></tr>
+                <h2 class="font-bold text-blue-900 uppercase text-sm mb-4">Danh mục thiết bị trạm</h2>
+                <div class="overflow-x-auto text-[11px]">
+                    <table class="w-full border-collapse">
+                        <thead><tr class="bg-slate-100"><th class="p-2 border">Tên</th><th class="p-2 border">S/N</th><th class="p-2 border">Vị trí</th></tr></thead>
+                        <tbody>
+                            <tr><td class="p-2 border">Card VDA Sitti</td><td class="p-2 border font-mono">SN-8821</td><td class="p-2 border">Slot 01</td></tr>
+                            <tr><td class="p-2 border">Jotron 7100 TX</td><td class="p-2 border font-mono">SN-9912</td><td class="p-2 border">Rack A</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- 2. NHẬT KÝ TRỰC CA (LOGS) -->
+        <!-- TAB 2: NHẬT KÝ -->
         <section id="tab-log" class="tab-content">
-            <div class="bg-white p-4 rounded-xl shadow border space-y-3">
-                <h2 class="font-bold text-blue-900 uppercase mb-2">Ghi chép kỹ thuật</h2>
-                <input type="text" id="log-title" placeholder="Thiết bị ảnh hưởng..." class="w-full border p-2 rounded">
-                <textarea id="log-content" placeholder="Chi tiết sự cố và cách xử lý..." class="w-full border p-2 rounded h-24"></textarea>
-                <button onclick="saveLog()" class="w-full bg-blue-700 text-white py-2 rounded font-bold">LƯU NHẬT KÝ</button>
-                <div id="log-history" class="mt-4 space-y-2 max-h-[300px] overflow-y-auto"></div>
+            <div class="bg-white p-4 rounded-xl shadow border">
+                <input type="text" id="log-dev" placeholder="Thiết bị..." class="w-full border p-2 rounded mb-2 text-sm">
+                <textarea id="log-txt" placeholder="Nội dung xử lý..." class="w-full border p-2 rounded h-20 text-sm mb-2"></textarea>
+                <button onclick="saveLog()" class="w-full bg-blue-700 text-white py-2 rounded font-bold text-sm">LƯU NHẬT KÝ</button>
+                <div id="log-list" class="mt-4 space-y-2"></div>
             </div>
         </section>
 
-        <!-- 3. QUY TRÌNH XỬ LÝ NHANH (SOP) -->
-        <section id="tab-sop" class="tab-content">
-            <div class="bg-white p-4 rounded-xl shadow border">
-                <h2 class="font-bold text-blue-900 mb-4 uppercase">Hướng dẫn xử lý sự cố (SOP)</h2>
-                <input type="text" onkeyup="searchSOP()" id="sop-search" placeholder="Tìm lỗi (vda: Nhiễu, Mất nguồn...)" class="w-full border-2 border-blue-100 p-2 rounded-lg mb-4">
-                <div id="sop-data" class="space-y-3 font-medium">
-                    <div class="sop-card p-3 bg-red-50 border-l-4 border-red-500" data-name="mất nguồn jotron">
-                        <p class="text-sm font-bold">Lỗi: Mất nguồn DC tại VHF Jotron</p>
-                        <p class="text-xs text-gray-600 italic">Kiểm tra PS-Unit -> Đo áp 27.2V -> Kiểm tra cầu chì F2.</p>
+        <!-- TAB 3: IN NHÃN BARCODE (Tích hợp công cụ của bạn) -->
+        <section id="tab-print" class="tab-content">
+            <div class="bg-white p-4 rounded-xl shadow border mb-4">
+                <h2 class="font-bold text-blue-900 uppercase text-sm mb-4">Cấu hình in nhãn Barcode</h2>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="input-group"><label>Tên Công Cụ</label><input type="text" id="inTen" value="Card M800IP"></div>
+                    <div class="input-group"><label>Mã Công Cụ</label><input type="text" id="inMa" value="CNS-VCCS-01"></div>
+                    <div class="input-group"><label>S/N</label><input type="text" id="inSN" placeholder="Số Serial"></div>
+                    <div class="input-group"><label>Nơi đặt</label><input type="text" id="inNoiDat" value="Trạm Ho Chi Minh ACC"></div>
+                </div>
+                
+                <div class="bg-slate-50 p-3 rounded-lg space-y-2 mb-4 border border-slate-200">
+                    <div class="flex items-center gap-4">
+                        <label class="w-24 text-[11px] font-bold">Ngang/Cao:</label>
+                        <input type="range" id="wSld" min="40" max="100" value="60" oninput="updateBCStyle()" class="flex-1">
+                        <span class="size-val" id="wTxt">60mm</span>
+                        <input type="range" id="hSld" min="30" max="60" value="40" oninput="updateBCStyle()" class="flex-1">
+                        <span class="size-val" id="hTxt">40mm</span>
                     </div>
-                    <div class="sop-card p-3 bg-amber-50 border-l-4 border-amber-500" data-name="vccs e1 alarm">
-                        <p class="text-sm font-bold">Lỗi: Card E1 VCCS báo Alarm Đỏ</p>
-                        <p class="text-xs text-gray-600 italic">Loopback đầu RJ45 -> Kiểm tra luồng truyền dẫn -> Reset Card.</p>
-                    </div>
                 </div>
-            </div>
-        </section>
 
-        <!-- 4. PHÂN HỆ QR (CẢ QUÉT VÀ TẠO) -->
-        <section id="tab-qr" class="tab-content space-y-4">
-            <!-- Quét QR -->
-            <div class="bg-white p-4 rounded-xl shadow border">
-                <h3 class="font-bold text-blue-900 mb-3 uppercase">Quét mã thiết bị</h3>
-                <div id="reader" class="bg-slate-100 rounded-lg overflow-hidden border"></div>
-                <div class="flex gap-2 mt-3">
-                    <button id="cam-on" onclick="startScanning()" class="flex-1 bg-green-600 text-white py-2 rounded font-bold">BẬT CAMERA</button>
-                    <button id="cam-off" onclick="stopScanning()" class="px-4 bg-gray-500 text-white py-2 rounded hidden">TẮT</button>
-                </div>
-                <div id="qr-res" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded hidden font-mono text-center">
-                    <p class="text-[10px] text-blue-500">KẾT QUẢ:</p>
-                    <p id="qr-res-text" class="font-bold"></p>
-                </div>
-            </div>
-
-            <!-- Tạo QR -->
-            <div class="bg-white p-4 rounded-xl shadow border">
-                <h3 class="font-bold text-blue-900 mb-3 uppercase">Tạo nhãn mã QR mới</h3>
                 <div class="flex gap-2">
-                    <input type="text" id="gen-input" placeholder="Nhập Serial..." class="flex-1 border p-2 rounded">
-                    <button onclick="generateNewQR()" class="bg-indigo-600 text-white px-4 rounded font-bold">TẠO</button>
+                    <button onclick="addLabel()" class="flex-1 bg-blue-600 text-white py-2 rounded font-bold text-xs">+ THÊM NHÃN</button>
+                    <button onclick="window.print()" class="flex-1 bg-green-600 text-white py-2 rounded font-bold text-xs">IN TẤT CẢ</button>
+                    <button onclick="clearZone()" class="bg-red-500 text-white px-4 rounded font-bold text-xs">XÓA</button>
                 </div>
-                <div id="qr-display-box" class="mt-4 text-center hidden">
-                    <div id="qrcode-output" class="inline-block p-2 bg-white shadow-sm border mb-2"></div>
-                    <p id="qr-label" class="text-xs font-bold text-slate-600"></p>
-                </div>
+            </div>
+            <div id="print-zone"></div>
+        </section>
+
+        <!-- TAB 4: QUÉT/TẠO QR -->
+        <section id="tab-qr" class="tab-content">
+            <div class="bg-white p-4 rounded-xl shadow border mb-4">
+                <h3 class="font-bold text-blue-900 mb-2 uppercase text-sm">Quét mã thiết bị</h3>
+                <div id="reader" class="bg-slate-100 rounded overflow-hidden"></div>
+                <button id="cam-btn" onclick="startScan()" class="w-full bg-green-600 text-white py-2 mt-2 rounded font-bold text-sm text-center">BẬT CAMERA</button>
+                <div id="qr-result" class="mt-2 p-2 bg-blue-50 border rounded hidden font-mono text-center text-sm font-bold"></div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow border text-center">
+                <h3 class="font-bold text-blue-900 mb-2 uppercase text-sm">Tạo mã QR nhanh</h3>
+                <input type="text" id="qr-input" placeholder="Nhập nội dung mã QR..." class="w-full border p-2 rounded mb-2 text-sm">
+                <button onclick="makeQR()" class="w-full bg-indigo-600 text-white py-2 rounded font-bold text-sm uppercase">Tạo QR</button>
+                <div id="qr-out" class="mt-4 inline-block"></div>
             </div>
         </section>
 
     </main>
 
     <script>
-        // --- ĐIỀU HƯỚNG TABS ---
+        let bcCount = 0;
+
         function switchTab(id) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('nav button').forEach(b => b.classList.remove('nav-active'));
             document.getElementById(id).classList.add('active');
             document.getElementById('btn-' + id.replace('tab-', '')).classList.add('nav-active');
-            if (id !== 'tab-qr') stopScanning();
+            if(id !== 'tab-qr') stopScan();
         }
 
-        // --- QUẢN LÝ NHẬT KÝ ---
-        function saveLog() {
-            const title = document.getElementById('log-title').value;
-            const content = document.getElementById('log-content').value;
-            if(!title || !content) return alert("Nhập thiếu thông tin!");
+        // --- HÀM CHO IN NHÃN BARCODE ---
+        function updateBCStyle() {
+            const w = document.getElementById('wSld').value;
+            const h = document.getElementById('hSld').value;
+            document.getElementById('wTxt').innerText = w + "mm";
+            document.getElementById('hTxt').innerText = h + "mm";
             
-            const logs = JSON.parse(localStorage.getItem('cns_technical_logs') || '[]');
-            logs.unshift({ title, content, time: new Date().toLocaleString() });
-            localStorage.setItem('cns_technical_logs', JSON.stringify(logs));
-            
-            document.getElementById('log-title').value = '';
-            document.getElementById('log-content').value = '';
-            loadLogs();
-        }
-
-        function loadLogs() {
-            const logs = JSON.parse(localStorage.getItem('cns_technical_logs') || '[]');
-            document.getElementById('log-history').innerHTML = logs.map(l => `
-                <div class="p-3 bg-white border rounded shadow-sm text-xs">
-                    <div class="flex justify-between font-bold text-blue-800 border-b pb-1"><span>${l.title}</span><span>${l.time}</span></div>
-                    <p class="mt-2 text-gray-700">${l.content}</p>
-                </div>
-            `).join('');
-        }
-
-        // --- TRA CỨU SOP ---
-        function searchSOP() {
-            let val = document.getElementById('sop-search').value.toLowerCase();
-            document.querySelectorAll('.sop-card').forEach(card => {
-                card.style.display = card.getAttribute('data-name').includes(val) ? 'block' : 'none';
+            document.querySelectorAll('.label-item').forEach(el => {
+                el.style.width = w + "mm";
+                el.style.height = h + "mm";
             });
         }
 
-        // --- QUÉT MÃ QR (HTML5-QRCODE) ---
-        let html5Scanner = null;
-        async function startScanning() {
-            document.getElementById('qr-res').classList.add('hidden');
-            document.getElementById('cam-on').classList.add('hidden');
-            document.getElementById('cam-off').classList.remove('hidden');
+        function addLabel() {
+            const ten = document.getElementById('inTen').value;
+            const ma = document.getElementById('inMa').value;
+            const sn = document.getElementById('inSN').value;
+            const noi = document.getElementById('inNoiDat').value;
+            const w = document.getElementById('wSld').value;
+            const h = document.getElementById('hSld').value;
 
-            if (!html5Scanner) html5Scanner = new Html5Qrcode("reader");
+            if(!ma) return alert("Cần có Mã CC");
+            bcCount++;
+            const id = `bc-${bcCount}`;
+            const html = `
+                <div class="label-item" style="width: ${w}mm; height: ${h}mm;">
+                    <table class="label-table">
+                        <tr><td class="col-title">Tên CC</td><td class="col-content">${ten}</td></tr>
+                        <tr><td class="col-title">Mã CC</td><td class="col-content">${ma}</td></tr>
+                        <tr><td class="col-title">S/N</td><td class="col-content">${sn}</td></tr>
+                        <tr><td class="col-title">Nơi đặt</td><td class="col-content">${noi}</td></tr>
+                    </table>
+                    <div class="barcode-section">
+                        <div class="barcode-wrapper"><svg id="${id}"></svg></div>
+                    </div>
+                </div>`;
+            document.getElementById('print-zone').insertAdjacentHTML('beforeend', html);
+            
+            JsBarcode(`#${id}`, ma, {
+                format: "CODE128",
+                displayValue: false,
+                width: 1.5,
+                height: 30,
+                margin: 0
+            });
+        }
 
+        function clearZone() { if(confirm("Xóa danh sách in?")) document.getElementById('print-zone').innerHTML = ""; }
+
+        // --- HÀM NHẬT KÝ ---
+        function saveLog() {
+            const dev = document.getElementById('log-dev').value;
+            const txt = document.getElementById('log-txt').value;
+            if(!dev || !txt) return;
+            const logs = JSON.parse(localStorage.getItem('cns_logs') || '[]');
+            logs.unshift({ dev, txt, time: new Date().toLocaleString() });
+            localStorage.setItem('cns_logs', JSON.stringify(logs));
+            loadLogs();
+        }
+        function loadLogs() {
+            const logs = JSON.parse(localStorage.getItem('cns_logs') || '[]');
+            document.getElementById('log-list').innerHTML = logs.map(l => `
+                <div class="p-2 bg-white border rounded text-xs shadow-sm">
+                    <div class="flex justify-between font-bold text-blue-800"><span>${l.dev}</span><span>${l.time}</span></div>
+                    <div class="text-gray-600 italic mt-1">${l.txt}</div>
+                </div>`).join('');
+        }
+
+        // --- HÀM QR ---
+        let scanner = null;
+        async function startScan() {
+            if(!scanner) scanner = new Html5Qrcode("reader");
             try {
-                await html5Scanner.start(
-                    { facingMode: "environment" },
-                    { fps: 10, qrbox: { width: 250, height: 250 } },
-                    (decodedText) => {
-                        document.getElementById('qr-res-text').innerText = decodedText;
-                        document.getElementById('qr-res').classList.remove('hidden');
-                        stopScanning();
-                    }
-                );
-            } catch (err) {
-                alert("Lỗi Camera: Kiểm tra HTTPS hoặc Quyền truy cập.");
-                stopScanning();
+                await scanner.start({facingMode: "environment"}, {fps: 10, qrbox: 250}, (txt) => {
+                    document.getElementById('qr-result').innerText = "KẾT QUẢ: " + txt;
+                    document.getElementById('qr-result').classList.remove('hidden');
+                    stopScan();
+                });
+                document.getElementById('cam-btn').innerText = "TẮT CAMERA";
+                document.getElementById('cam-btn').onclick = stopScan;
+            } catch(e) { alert("Lỗi camera!"); }
+        }
+        function stopScan() {
+            if(scanner) {
+                scanner.stop(); scanner = null;
+                document.getElementById('cam-btn').innerText = "BẬT CAMERA";
+                document.getElementById('cam-btn').onclick = startScan;
             }
         }
-
-        function stopScanning() {
-            if (html5Scanner) {
-                html5Scanner.stop().then(() => {
-                    html5Scanner.clear();
-                    html5Scanner = null;
-                    document.getElementById('cam-on').classList.remove('hidden');
-                    document.getElementById('cam-off').classList.add('hidden');
-                }).catch(() => {});
-            }
-        }
-
-        // --- TẠO MÃ QR ---
-        function generateNewQR() {
-            const val = document.getElementById('gen-input').value;
+        function makeQR() {
+            const val = document.getElementById('qr-input').value;
             if(!val) return;
-            const output = document.getElementById('qrcode-output');
-            output.innerHTML = "";
-            new QRCode(output, { text: val, width: 150, height: 150 });
-            document.getElementById('qr-label').innerText = val;
-            document.getElementById('qr-display-box').classList.remove('hidden');
+            document.getElementById('qr-out').innerHTML = "";
+            new QRCode(document.getElementById('qr-out'), { text: val, width: 128, height: 128 });
         }
 
+        // Khởi tạo
+        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
         window.onload = loadLogs;
     </script>
 </body>
